@@ -1,8 +1,26 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Truck, Server, ArrowRight, ArrowLeft, Eye, EyeOff, Mail, Lock, ShieldCheck, Network, BarChart2, Check, Globe } from 'lucide-react';
-import { GlobeGraphic } from './AnimatedAuthSVGs';
+import { GlobeGraphic, SupplierGraphic, AdminGraphic } from './AnimatedAuthSVGs';
 import './LoginPage.css';
+
+const supplierCardTheme = {
+    outerHover: "hover:border-emerald-500/20",
+    blobBg: "bg-emerald-50/50 group-hover:bg-emerald-50",
+    iconText: "text-emerald-600",
+    iconGroupHover: "group-hover:bg-emerald-500 group-hover:text-white group-hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] group-hover:border-emerald-400",
+    checkBg: "bg-emerald-50 text-emerald-600",
+    arrowGroupHover: "group-hover:border-emerald-600 group-hover:bg-emerald-600 group-hover:text-white"
+};
+
+const adminCardTheme = {
+    outerHover: "hover:border-purple-500/20",
+    blobBg: "bg-purple-50/50 group-hover:bg-purple-50",
+    iconText: "text-purple-600",
+    iconGroupHover: "group-hover:bg-purple-500 group-hover:text-white group-hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] group-hover:border-purple-400",
+    checkBg: "bg-purple-50 text-purple-600",
+    arrowGroupHover: "group-hover:border-purple-600 group-hover:bg-purple-600 group-hover:text-white"
+};
 
 function SRMLogo({ size = 28, fill = '#2563eb' }) {
   return (
@@ -15,27 +33,44 @@ function SRMLogo({ size = 28, fill = '#2563eb' }) {
   );
 }
 
-function FeatureCheck() {
+function FeatureCheck({ checkBg }) {
+  const [bgClass, textClass] = checkBg ? checkBg.split(' ') : ['bg-blue-50', 'text-blue-600'];
   return (
-    <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <Check size={10} color="#2563eb" strokeWidth={3} />
+    <div className={`w-3.5 h-3.5 rounded-full ${bgClass} flex items-center justify-center shrink-0`}>
+      <Check size={10} className={textClass} strokeWidth={3} />
     </div>
   );
 }
 
-function RoleCard({ icon: Icon, title, desc, features, isSelected, onClick }) {
+function RoleCard({ icon: Icon, title, desc, features, isSelected, onClick, theme }) {
   return (
-    <div className={`auth-role-card ${isSelected ? 'auth-role-card--active' : ''}`} onClick={onClick}>
-      <div className="auth-role-card__icon-box"><Icon size={20} /></div>
-      <h3 className="auth-role-card__title">{title}</h3>
-      <p className="auth-role-card__desc">{desc}</p>
-      <ul className="auth-role-card__list">
-        {features.map((f, i) => <li key={i}><FeatureCheck />{f}</li>)}
+    <div className={`auth-role-card ${isSelected ? 'auth-role-card--active' : ''} ${theme?.outerHover || ''}`} onClick={onClick}>
+      {theme?.blobBg && (
+        <div className={`absolute top-0 right-0 w-32 h-32 ${theme.blobBg} rounded-bl-full translate-x-10 -translate-y-10 transition-colors pointer-events-none z-0`} />
+      )}
+      <div className={`auth-role-card__icon-box ${theme?.iconText || ''} ${theme?.iconGroupHover || ''} relative z-10`}><Icon size={20} /></div>
+      <h3 className="auth-role-card__title relative z-10">{title}</h3>
+      <p className="auth-role-card__desc relative z-10">{desc}</p>
+      <ul className="auth-role-card__list relative z-10">
+        {features.map((f, i) => <li key={i} className="flex items-center gap-2"><FeatureCheck checkBg={theme?.checkBg} />{f}</li>)}
       </ul>
-      <div className="auth-role-card__arrow"><ArrowRight size={14} /></div>
+      <div className={`auth-role-card__arrow ${theme?.arrowGroupHover || ''} relative z-10`}><ArrowRight size={14} /></div>
     </div>
   );
 }
+
+const Feature = ({ icon, title, sub, theme }) => (
+  <div className="auth-footer-feature">
+    <div className={theme.textAc}>
+      {React.cloneElement(icon, { className: 'w-5 h-5' })}
+    </div>
+    <div className="auth-footer-feature__text">
+      <strong>{title}</strong>
+      <span>{sub}</span>
+    </div>
+  </div>
+);
+
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -76,6 +111,12 @@ export function LoginPage() {
     setTimeout(() => { setIsLoading(false); navigate(role === 'admin' ? '/admin' : '/supplier'); }, 1200);
   }
 
+  const footerTheme = role === 'supplier'
+    ? { textAc: 'text-emerald-600' }
+    : role === 'admin'
+      ? { textAc: 'text-purple-600' }
+      : { textAc: 'text-blue-600' };
+
   return (
     <div className="auth-page">
       <div className="auth-frame">
@@ -83,7 +124,13 @@ export function LoginPage() {
         {/* LEFT PANEL — Globe */}
         <div className="auth-hero">
           <div className="auth-hero__glow-bottom" />
-          <GlobeGraphic />
+          {role === 'supplier' ? (
+            <SupplierGraphic />
+          ) : role === 'admin' ? (
+            <AdminGraphic />
+          ) : (
+            <GlobeGraphic />
+          )}
         </div>
 
         {/* RIGHT PANEL */}
@@ -98,10 +145,12 @@ export function LoginPage() {
                 <div className="auth-role-grid">
                   <RoleCard icon={Truck} title="Supplier" desc="Manage your business and grow with us"
                     features={['Manage Bids & RFQs', 'Track Orders & Deliveries', 'Upload Invoices', 'View Performance']}
-                    isSelected={role === 'supplier'} onClick={() => handleRoleSelect('supplier')} />
+                    isSelected={role === 'supplier'} onClick={() => handleRoleSelect('supplier')}
+                    theme={supplierCardTheme} />
                   <RoleCard icon={Server} title="Admin" desc="Manage system and platform operations"
                     features={['User & Role Management', 'System Configuration', 'Analytics Dashboard', 'Audit & Compliance']}
-                    isSelected={role === 'admin'} onClick={() => handleRoleSelect('admin')} />
+                    isSelected={role === 'admin'} onClick={() => handleRoleSelect('admin')}
+                    theme={adminCardTheme} />
                 </div>
                 <div className="auth-security-notice" style={{ justifyContent: 'center' }}>
                   <ShieldCheck size={16} />
@@ -174,9 +223,9 @@ export function LoginPage() {
 
           {/* Footer Features */}
           <div className="auth-footer-features">
-            <div className="auth-footer-feature"><ShieldCheck /><div className="auth-footer-feature__text"><strong>Secure & Compliant</strong><span>Enterprise grade</span></div></div>
-            <div className="auth-footer-feature"><Network /><div className="auth-footer-feature__text"><strong>Connected Globally</strong><span>Partners worldwide</span></div></div>
-            <div className="auth-footer-feature"><BarChart2 /><div className="auth-footer-feature__text"><strong>Data Driven</strong><span>Smart decisions</span></div></div>
+            <Feature icon={<ShieldCheck />} title="Secure & Compliant" sub="Enterprise grade" theme={footerTheme} />
+            <Feature icon={<Network />} title="Connected Globally" sub="Partners worldwide" theme={footerTheme} />
+            <Feature icon={<BarChart2 />} title="Data Driven" sub="Smart decisions" theme={footerTheme} />
           </div>
 
         </div>

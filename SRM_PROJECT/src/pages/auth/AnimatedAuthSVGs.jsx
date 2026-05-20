@@ -160,3 +160,78 @@ export function GlobeGraphic() {
     </div>
   );
 }
+
+export function SupplierGraphic() {
+    return (
+        <div className="relative w-[80%] aspect-square max-w-[400px] mx-auto flex items-center justify-center pointer-events-none">
+            <div className="absolute inset-0 bg-emerald-400/10 blur-[60px] rounded-full mix-blend-multiply" />
+            <motion.svg viewBox="0 0 200 200" className="w-full h-full relative z-10 overflow-visible">
+                {/* Minimal Road */}
+                <motion.line x1="20" y1="160" x2="180" y2="160" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeDasharray="12 12"
+                    animate={{ strokeDashoffset: [0, 24] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }} />
+                
+                {/* Minimal Truck */}
+                <motion.g animate={{ y: [-2, 2, -2] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>
+                    {/* Trailer Box */}
+                    <path d="M 40 80 L 110 80 L 110 140 L 40 140 Z" fill="white" stroke="#10b981" strokeWidth="4" strokeLinejoin="round" />
+                    <line x1="60" y1="80" x2="60" y2="140" stroke="#10b981" strokeWidth="2" opacity="0.3" />
+                    <line x1="80" y1="80" x2="80" y2="140" stroke="#10b981" strokeWidth="2" opacity="0.3" />
+                    
+                    {/* Cab */}
+                    <path d="M 115 100 L 138 100 Q 145 100 148 108 L 152 140 L 115 140 Z" fill="white" stroke="#10b981" strokeWidth="4" strokeLinejoin="round" />
+                    <path d="M 122 106 L 135 106 Q 140 106 142 112 L 144 120 L 122 120 Z" fill="#6ee7b7" opacity="0.4" />
+                    
+                    {/* Wheels */}
+                    <circle cx="65" cy="145" r="12" fill="white" stroke="#10b981" strokeWidth="4" />
+                    <circle cx="130" cy="145" r="12" fill="white" stroke="#10b981" strokeWidth="4" />
+                    <motion.circle cx="65" cy="145" r="4" fill="#059669" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity }} />
+                    <motion.circle cx="130" cy="145" r="4" fill="#059669" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }} />
+                </motion.g>
+
+                {/* Wind Lines */}
+                <motion.line x1="10" y1="100" x2="25" y2="100" stroke="#6ee7b7" strokeWidth="2" strokeLinecap="round"
+                    animate={{ x: [0, 8, 0], opacity: [0, 1, 0] }} transition={{ duration: 1.2, repeat: Infinity }} />
+                <motion.line x1="15" y1="120" x2="35" y2="120" stroke="#6ee7b7" strokeWidth="2" strokeLinecap="round"
+                     animate={{ x: [0, 12, 0], opacity: [0, 1, 0] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.4 }} />
+            </motion.svg>
+        </div>
+    )
+}
+
+export function AdminGraphic() {
+    return (
+        <div className="relative w-[80%] aspect-square max-w-[400px] mx-auto flex items-center justify-center pointer-events-none">
+            <div className="absolute inset-0 bg-purple-400/10 blur-[60px] rounded-full mix-blend-multiply" />
+            <motion.svg viewBox="0 0 200 200" className="w-full h-full relative z-10 overflow-visible">
+                
+                {/* Orbital Rings */}
+                <motion.circle cx="100" cy="100" r="75" fill="none" stroke="#d8b4fe" strokeWidth="2" strokeDasharray="20 20"
+                    animate={{ rotate: 360 }} transition={{ duration: 25, repeat: Infinity, ease: 'linear' }} style={{ transformOrigin: '100px 100px' }} />
+                <motion.circle cx="100" cy="100" r="60" fill="none" stroke="#e9d5ff" strokeWidth="1.5" strokeDasharray="8 12"
+                    animate={{ rotate: -360 }} transition={{ duration: 20, repeat: Infinity, ease: 'linear' }} style={{ transformOrigin: '100px 100px' }} />
+                
+                {/* Glowing Dots on Orbit */}
+                <motion.g animate={{ rotate: 360 }} transition={{ duration: 15, repeat: Infinity, ease: 'linear' }} style={{ transformOrigin: '100px 100px' }}>
+                    <circle cx="25" cy="100" r="4" fill="#a855f7" />
+                    <circle cx="175" cy="100" r="3" fill="#c084fc" />
+                </motion.g>
+
+                {/* Minimal Shield */}
+                <motion.path 
+                    d="M 100 45 L 145 65 L 145 110 C 145 145 100 170 100 170 C 100 170 55 145 55 110 L 55 65 Z" 
+                    fill="white" stroke="#a855f7" strokeWidth="4" strokeLinejoin="round"
+                    animate={{ y: [-4, 4, -4] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                
+                {/* Lock / Security Core inside Shield */}
+                <motion.g animate={{ y: [-4, 4, -4] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>
+                    <rect x="86" y="100" width="28" height="22" rx="4" fill="#d8b4fe" stroke="#a855f7" strokeWidth="2" />
+                    <path d="M 92 100 L 92 88 C 92 82 108 82 108 88 L 108 100" fill="none" stroke="#a855f7" strokeWidth="3" strokeLinecap="round" />
+                    <circle cx="100" cy="111" r="3" fill="white" />
+                </motion.g>
+
+            </motion.svg>
+        </div>
+    )
+}
+

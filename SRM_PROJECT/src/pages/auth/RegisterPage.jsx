@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Truck, Shield, ArrowRight, ArrowLeft, Eye, EyeOff, ShieldCheck, Network, BarChart2, CheckCircle2, User, Building2, Mail, Lock } from 'lucide-react';
+import { Truck, Shield, ArrowRight, ArrowLeft, Eye, ShieldCheck, Network, BarChart2, CheckCircle2, User, Building2, Mail, Lock } from 'lucide-react';
 import { GlobeGraphic } from './AnimatedAuthSVGs';
 import './LoginPage.css';
 
