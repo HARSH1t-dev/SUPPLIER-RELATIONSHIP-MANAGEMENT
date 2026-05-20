@@ -9,7 +9,7 @@ export default function ChatAssistant() {
   const [input, setInput] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
-  // Predefined Questions
+
   const predefinedQuestions = [
     {
       question: "Open Supplier Page",
@@ -30,7 +30,7 @@ export default function ChatAssistant() {
   ];
   
 
-  // Menu Button Click
+
   const handleQuestionClick = (item) => {
 
     setMessages((prev) => [
@@ -39,7 +39,7 @@ export default function ChatAssistant() {
       { text: item.answer, sender: "bot" }
     ]);
 
-    // Navigation
+
     if (item.question.includes("Supplier")) {
       setTimeout(() => {
         navigate("/admin/suppliers");
@@ -59,7 +59,7 @@ export default function ChatAssistant() {
     }
   };
 
-  // Send Message
+
   const sendMessage = () => {
 
    if (!input.trim()) return;
@@ -74,7 +74,7 @@ export default function ChatAssistant() {
   let botReply =
     "Sorry, I don't have any idea about that yet. Please ask something related to Suppliers, RFQs, or Orders.";
 
-  // FAQs
+
 
   if (text.includes("how many active rfqs")) {
     botReply = "There are currently 76 active RFQs.";
@@ -158,7 +158,7 @@ export default function ChatAssistant() {
     }, 1000);
   }
 
-  // Update Messages
+ 
   setMessages((prev) => [
     ...prev,
     userMessage,
@@ -174,7 +174,7 @@ export default function ChatAssistant() {
   return (
     <>
 
-      {/* Floating Chat Button */}
+
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
@@ -198,7 +198,6 @@ export default function ChatAssistant() {
         </button>
       )}
 
-      {/* Chat Window */}
       {isOpen && (
         <div
           style={{
@@ -217,8 +216,6 @@ export default function ChatAssistant() {
             flexDirection: "column",
           }}
         >
-
-          {/* Header */}
           <div
             style={{
               background: "#2563eb",
@@ -249,7 +246,7 @@ export default function ChatAssistant() {
           </div>
            Hello 👋 How can I help you?
 
-          {/* Menu Buttons */}
+      
           <div
             style={{
               padding: "10px",
@@ -278,7 +275,7 @@ export default function ChatAssistant() {
             ))}
           </div>
 
-          {/* Messages */}
+        
           <div
             style={{
               flex: 1,
@@ -326,8 +323,7 @@ export default function ChatAssistant() {
               </div>
             ))}
           </div>
-
-          {/* Input */}
+          
           <div
             style={{
               display: "flex",
