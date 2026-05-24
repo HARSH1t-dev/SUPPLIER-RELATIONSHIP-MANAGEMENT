@@ -27,10 +27,79 @@ Here is the high-fidelity role-based landing page, allowing users to choose thei
 ![SRM Supplier Page](SRM_PROJECT/public/images/supplier.png)
 ![SRM Admin Page](SRM_PROJECT/public/images/admin.png)
 
-![alt text](image-1.png)
-![alt text](image-2.png)
-![alt text](image-3.png)
-![alt text](image.png)
+### Dashboard Data Flow Diagram (DFD)
+
+The diagram below represents the functional Level-1 Data Flow Diagram (DFD) of the SRM Portal dashboards, showcasing how information moves between the roles (Admin, Supplier), dashboard engine processes, and the database stores:
+
+```mermaid
+graph TD
+    %% Styling
+    classDef actor fill:#f9fafb,stroke:#475569,stroke-width:2px;
+    classDef process fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,rx:10px,ry:10px;
+    classDef db fill:#fef9c3,stroke:#ca8a04,stroke-width:2px;
+
+    %% Actors
+    Admin[👤 Admin]:::actor
+    Supplier[🚚 Supplier]:::actor
+
+    %% Processes
+    subgraph Dashboards [SRM Portal Dashboards]
+        subgraph AdminDash [Admin Dashboard Processes]
+            P2_1[2.1 Spend Analytics Engine]:::process
+            P2_2[2.2 RFQ Pipeline Monitor]:::process
+            P2_3[2.3 Order Tracker]:::process
+            P2_4[2.4 Log Auditor]:::process
+        end
+
+        subgraph SupplierDash [Supplier Dashboard Processes]
+            P3_1[3.1 KPI Statistics Engine]:::process
+            P3_2[3.2 RFQ Sourcing Inbox]:::process
+            P3_3[3.3 Active Order Tracker]:::process
+            P3_4[3.4 Workspace Feed]:::process
+        end
+    end
+
+    %% Data Stores
+    subgraph Stores [MySQL Datastore]
+        DB_Users[(Users & Roles)]:::db
+        DB_RFQs[(RFQs & Bids)]:::db
+        DB_POs[(Purchase Orders)]:::db
+        DB_Reviews[(Receipts & Reviews)]:::db
+        DB_Logs[(Audit Logs)]:::db
+    end
+
+    %% Flows - Admin Dashboard
+    DB_POs -->|PO Details & Spend Data| P2_1
+    DB_RFQs -->|RFQ pipeline data| P2_2
+    DB_POs -->|PO status data| P2_3
+    DB_Logs -->|Operational logs| P2_4
+
+    P2_1 -->|Spend Trend Charts| Admin
+    P2_2 -->|Sourcing Slices Pie Chart| Admin
+    P2_3 -->|Fulfilled vs Unfulfilled Bar Chart| Admin
+    P2_4 -->|Recent Activity Feed Table| Admin
+
+    %% Flows - Supplier Dashboard
+    DB_RFQs -->|Bid performance stats| P3_1
+    DB_Reviews -->|Delivery & Rating stats| P3_1
+    DB_RFQs -->|Invited / Open RFQs| P3_2
+    DB_POs -->|Supplier PO execution data| P3_3
+    DB_Logs -->|Workspace event history| P3_4
+
+    P3_1 -->|Performance KPI Metrics Cards| Supplier
+    P3_2 -->|Open RFQs Table & Bid Submission| Supplier
+    P3_3 -->|Ongoing Orders Table| Supplier
+    P3_4 -->|Supplier-specific Activity Feed| Supplier
+
+    %% Sourcing & Lifecycle Flow Updates
+    Admin -->|Create RFQ / Broadcast| DB_RFQs
+    Supplier -->|Submit Bid Quotation| DB_RFQs
+    Admin -->|Compare Bids & Award PO| DB_POs
+    Supplier -->|Deliver Goods & Invoice| DB_Reviews
+    Admin -->|Accept Delivery & Rate Supplier| DB_Reviews
+    DB_Reviews -->|Log events| DB_Logs
+```
+
 ---
 
 ## 🚀 Key Modules & Features

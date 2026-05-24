@@ -107,6 +107,7 @@ const Feature = ({ icon, title, sub, theme }) => (
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/SRM_PROJECT/backend/api';
   const [step, setStep] = useState('select');
   const [role, setRole] = useState(null);
   const [email, setEmail] = useState('');
@@ -143,10 +144,44 @@ export function LoginPage() {
     const e = validate(); setErrors(e);
     if (Object.keys(e).length) return;
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate(role === 'admin' ? '/admin' : '/supplier');
-    }, 1200);
+
+    fetch(`${apiBaseUrl}/login.php`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password, role }),
+    })
+      .then(async (response) => {
+        const raw = await response.text();
+        let data = {};
+
+        if (raw.trim()) {
+          try {
+            data = JSON.parse(raw);
+          } catch {
+            throw new Error(response.status === 404 ? 'No account found for this email address.' : 'Unexpected server response.');
+          }
+        }
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || (response.status === 404 ? 'No account found for this email address.' : 'Login failed.'));
+        }
+
+        return data;
+      })
+      .then((data) => {
+        navigate(data.user?.role === 'admin' ? '/admin' : '/supplier');
+      })
+      .catch((error) => {
+        setErrors((currentErrors) => ({
+          ...currentErrors,
+          general: error.message,
+        }));
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }
 
   const footerTheme = role === 'supplier'
@@ -255,6 +290,11 @@ export function LoginPage() {
                     <p className="auth-panel__sub">Sign in to your account</p>
 
                     <form className="auth-form" onSubmit={handleSubmit} noValidate>
+                      {errors.general && (
+                        <div className="auth-field__error" style={{ marginTop: 0, marginBottom: 4 }}>
+                          {errors.general}
+                        </div>
+                      )}
                       <div className="relative">
                         <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-1.5 text-uppercase tracking-wider uppercase">
                           Email

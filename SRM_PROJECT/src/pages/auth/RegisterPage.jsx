@@ -33,6 +33,7 @@ function LoaderDots() {
 export function RegisterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/SRM_PROJECT/backend/api';
   const [role, setRole] = useState(searchParams.get('role') || 'supplier');
   const [currentStep, setCurrentStep] = useState(0);
   const [fullName, setFullName] = useState('');
@@ -86,10 +87,51 @@ export function RegisterPage() {
     setErrors(e);
     if (Object.keys(e).length) return;
     setIsLoading(true);
-    setTimeout(() => { 
-      setIsLoading(false); 
-      navigate(isAdmin ? '/admin' : '/supplier'); 
-    }, 1200);
+
+    fetch(`${apiBaseUrl}/register.php`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        fullName,
+        companyName,
+        email,
+        password,
+        role,
+        verificationCode,
+      }),
+    })
+      .then(async (response) => {
+        const raw = await response.text();
+        let data = {};
+
+        if (raw.trim()) {
+          try {
+            data = JSON.parse(raw);
+          } catch {
+            throw new Error('Unexpected server response.');
+          }
+        }
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Unable to create account.');
+        }
+
+        return data;
+      })
+      .then(() => {
+        navigate('/login', { replace: true, state: { message: 'Account created. Please sign in.' } });
+      })
+      .catch((error) => {
+        setErrors((currentErrors) => ({
+          ...currentErrors,
+          general: error.message,
+        }));
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }
 
   function goBack() {
@@ -193,6 +235,11 @@ export function RegisterPage() {
 
               {/* FORM */}
               <form onSubmit={currentStep === 2 ? handleSubmit : handleNext} noValidate>
+                {errors.general && (
+                  <div className="auth-field__error" style={{ marginBottom: 8 }}>
+                    {errors.general}
+                  </div>
+                )}
                 {currentStep === 0 && (
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                   <div>
@@ -201,6 +248,7 @@ export function RegisterPage() {
                       <User size={15} className="auth-input-wrap__icon" />
                       <input type="text" className="auth-input" placeholder="Your name" value={fullName} onChange={e=>setFullName(e.target.value)} />
                     </div>
+                    {errors.fullName && <span className="auth-field__error">{errors.fullName}</span>}
                   </div>
                   <div style={{ gridColumn:'span 2' }}>
                     <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-1.5 uppercase tracking-wider">Email address</label>
@@ -208,6 +256,7 @@ export function RegisterPage() {
                       <Mail size={15} className="auth-input-wrap__icon" />
                       <input type="email" className="auth-input" placeholder="name@company.com" value={email} onChange={e=>setEmail(e.target.value)} />
                     </div>
+                    {errors.email && <span className="auth-field__error">{errors.email}</span>}
                   </div>
                   <div>
                     <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-1.5 uppercase tracking-wider">Password</label>
@@ -216,6 +265,7 @@ export function RegisterPage() {
                       <input type={showPw?'text':'password'} className="auth-input" placeholder="Min 6 chars" value={password} onChange={e=>setPassword(e.target.value)} />
                       <button type="button" className="auth-pw-toggle" onClick={()=>setShowPw(!showPw)}><Eye size={14}/></button>
                     </div>
+                    {errors.password && <span className="auth-field__error">{errors.password}</span>}
                   </div>
                   <div>
                     <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-1.5 uppercase tracking-wider">Confirm</label>
@@ -224,6 +274,7 @@ export function RegisterPage() {
                       <input type={showCPw?'text':'password'} className="auth-input" placeholder="Confirm" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} />
                       <button type="button" className="auth-pw-toggle" onClick={()=>setShowCPw(!showCPw)}><Eye size={14}/></button>
                     </div>
+                    {errors.confirmPassword && <span className="auth-field__error">{errors.confirmPassword}</span>}
                   </div>
                   <div style={{ gridColumn:'span 2', marginTop:6 }}>
                     <button type="submit" className="auth-step-button auth-step-button--primary">
@@ -249,6 +300,7 @@ export function RegisterPage() {
                           onChange={e=>setCompanyName(e.target.value)}
                         />
                       </div>
+                      {errors.companyName && <span className="auth-field__error">{errors.companyName}</span>}
                     </div>
 
                     <div className="auth-security-notice">
@@ -286,13 +338,14 @@ export function RegisterPage() {
                           onChange={e=>setVerificationCode(e.target.value)}
                         />
                       </div>
+                      {errors.verificationCode && <span className="auth-field__error">{errors.verificationCode}</span>}
                     </div>
 
                     <div className="auth-security-notice">
                       <ShieldCheck size={16} />
                       <div>
                         <div className="font-bold text-slate-900 dark:text-slate-200 text-[11.5px]">Verify your account</div>
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400">Enter the code sent to your email to complete registration.</div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400">Demo code: 123456. Enter any 6 digits to finish registration.</div>
                       </div>
                     </div>
 
@@ -302,6 +355,7 @@ export function RegisterPage() {
                         I agree to the <a href="#" className="text-blue-500 font-bold hover:underline">Terms</a> and <a href="#" className="text-blue-500 font-bold hover:underline">Privacy Policy</a>
                       </span>
                     </div>
+                    {errors.agreed && <span className="auth-field__error">Please accept the Terms and Privacy Policy.</span>}
 
                     <div style={{ display:'flex', gap:12, marginTop:6 }}>
                       <button type="button" className="auth-step-button auth-step-button--ghost" onClick={goBack}>
