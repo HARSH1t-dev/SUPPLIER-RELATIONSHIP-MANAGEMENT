@@ -10,8 +10,18 @@ export function Sidebar({ items, title, subtitle, isOpen, onClose }) {
     ? 'bg-blue-50 text-blue-700 ring-blue-600/20'
     : 'bg-violet-50 text-violet-700 ring-violet-600/20';
 
-  const userName = isAdmin ? 'Admin User' : 'Supplier User';
-  const userSubtext = isAdmin ? 'Super Admin' : 'ABC Supplies Pvt. Ltd.';
+  const currentUser = (() => {
+    try {
+      const stored = sessionStorage.getItem('srm_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const isRoleMatch = currentUser?.role === (isAdmin ? 'admin' : 'supplier');
+  const userName = isRoleMatch && currentUser?.fullName ? currentUser.fullName : (isAdmin ? 'Admin User' : 'Supplier User');
+  const userSubtext = isAdmin ? 'Super Admin' : (isRoleMatch && currentUser?.companyName ? currentUser.companyName : 'Apex Industrial Components');
   const sidebarClass = isAdmin
     ? 'border-blue-950/20 bg-[#06265a] text-white shadow-[4px_0_28px_rgba(2,6,23,0.18)]'
     : 'border-emerald-950/20 bg-[#046044] text-white shadow-[4px_0_28px_rgba(2,6,23,0.16)]';
@@ -97,7 +107,10 @@ export function Sidebar({ items, title, subtitle, isOpen, onClose }) {
               <p className="truncate text-xs text-white/58">{userSubtext}</p>
             </div>
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => {
+                sessionStorage.removeItem('srm_user');
+                navigate('/login');
+              }}
               className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-white/55 transition hover:bg-white/10 hover:text-white"
               title="Sign out"
             >

@@ -1,11 +1,12 @@
 import { LogOut, Save, UserRound } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/Button.jsx';
 import { Card, CardHeader } from '../../components/Card.jsx';
 import { FormField, inputClass } from '../../components/FormField.jsx';
 import { PageHeader } from '../../components/PageHeader.jsx';
 
 export function AdminProfile() {
+  const navigate = useNavigate();
   return (
     <div className="space-y-6">
       <PageHeader title="Profile" description="Manage your admin profile, preferences, and logout options." />
@@ -46,12 +47,17 @@ export function AdminProfile() {
                 <Save className="h-4 w-4" />
                 Save Profile
               </Button>
-              <Link to="/login">
-                <Button type="button" variant="secondary">
-                  <LogOut className="h-4 w-4" />
-                  Logout
-                </Button>
-              </Link>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  sessionStorage.removeItem('srm_user');
+                  navigate('/login');
+                }}
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
             </div>
           </form>
         </div>

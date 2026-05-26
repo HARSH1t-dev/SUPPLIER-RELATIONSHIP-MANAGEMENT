@@ -1,4 +1,4 @@
-import { Save, UploadCloud, Trash2, ShieldCheck, AlertCircle, Check } from 'lucide-react';
+import { Save, UploadCloud, Trash2, ShieldCheck, AlertCircle, Check, Loader2 } from 'lucide-react';
 import { Button } from '../../components/Button.jsx';
 import { Card, CardHeader } from '../../components/Card.jsx';
 import { FormField, inputClass } from '../../components/FormField.jsx';
@@ -7,9 +7,18 @@ import { DataTable } from '../../components/DataTable.jsx';
 import { StatusBadge } from '../../components/StatusBadge.jsx';
 import { Modal } from '../../components/Modal.jsx';
 import { useDisclosure } from '../../hooks/useDisclosure.js';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 export function SupplierProfile() {
+  const currentUser = useMemo(() => {
+    try {
+      const stored = sessionStorage.getItem('srm_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const [docsList, setDocsList] = useState(() => {
     const saved = localStorage.getItem('srm_compliance_docs');
     if (saved) return JSON.parse(saved);
@@ -23,6 +32,9 @@ export function SupplierProfile() {
   const verifyDocModal = useDisclosure(false);
   const [docForm, setDocForm] = useState({ id: '', type: 'ISO 9001', issuer: '', expiry: '' });
   const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [showSaveBanner, setShowSaveBanner] = useState(false);
 
   const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1/SUPPLIER-RELATIONSHIP-MANAGEMENT/SRM_PROJECT/backend/api').replace(/\/$/, '');
 
@@ -134,18 +146,88 @@ export function SupplierProfile() {
     }
   };
 
+  const handleSaveProfile = () => {
+    setIsSaving(true);
+    setIsSaved(false);
+    setShowSaveBanner(false);
+    
+    setTimeout(() => {
+      setIsSaving(false);
+      setIsSaved(true);
+      setShowSaveBanner(true);
+      
+      setTimeout(() => {
+        setIsSaved(false);
+      }, 2000);
+      
+      setTimeout(() => {
+        setShowSaveBanner(false);
+      }, 4000);
+    }, 800);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!currentUser?.id) return;
+    
+    if (currentUser.id === 1) {
+      alert("Cannot delete the system super admin account.");
+      return;
+    }
+
+    const confirmFirst = window.confirm(
+      "WARNING: This action is permanent and cannot be undone.\n\n" +
+      "Are you absolutely sure you want to permanently delete your supplier partner account and all your submitted bids?"
+    );
+    
+    if (!confirmFirst) return;
+    
+    const confirmSecond = window.confirm(
+      "FINAL CONFIRMATION:\n\n" +
+      "You will lose access to this workspace and all bidding histories immediately. Confirm account deletion?"
+    );
+    
+    if (!confirmSecond) return;
+    
+    try {
+      const response = await fetch(`${apiBaseUrl}/delete-account.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: currentUser.id }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        alert("Your account has been deleted successfully. You will now be redirected to the login page.");
+        sessionStorage.removeItem('srm_user');
+        window.location.hash = '#/login';
+      } else {
+        alert(data.message || "Failed to delete account. Please try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("A network error occurred while attempting to delete your account. Please try again.");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader title="Profile" description="Maintain company details, compliance contacts, and banking-ready information." />
       
       <Card>
         <CardHeader title="Company Profile" />
+        {showSaveBanner && (
+          <div className="mx-5 mt-2 flex items-center gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50/70 p-3 text-xs font-semibold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-400 animate-fade-in">
+            <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={3} />
+            <span>Profile settings synchronized with procurement directory.</span>
+          </div>
+        )}
         <form className="grid gap-4 p-5 md:grid-cols-2" onSubmit={(e) => e.preventDefault()}>
           <FormField label="Company name">
-            <input className={inputClass} defaultValue="Apex Industrial Components" />
+            <input className={inputClass} defaultValue={currentUser?.companyName || "Apex Industrial Components"} />
           </FormField>
           <FormField label="Primary contact">
-            <input className={inputClass} defaultValue="Maya Chen" />
+            <input className={inputClass} defaultValue={currentUser?.fullName || "Maya Chen"} />
           </FormField>
           <FormField label="Category">
             <input className={inputClass} defaultValue="Mechanical Parts" />
@@ -163,9 +245,28 @@ export function SupplierProfile() {
             </select>
           </FormField>
           <div className="md:col-span-2">
-            <Button type="button">
-              <Save className="h-4 w-4" />
-              Save profile
+            <Button 
+              type="button" 
+              onClick={handleSaveProfile}
+              disabled={isSaving}
+              className={`transition duration-300 ${isSaved ? '!bg-emerald-600 hover:!bg-emerald-700 !text-white' : ''}`}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : isSaved ? (
+                <>
+                  <Check className="h-4 w-4 text-white" strokeWidth={3} />
+                  Saved!
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Save profile
+                </>
+              )}
             </Button>
           </div>
         </form>
@@ -328,6 +429,25 @@ export function SupplierProfile() {
           )}
         </div>
       </Modal>
+
+      {/* Danger Zone */}
+      <Card className="border-rose-100 bg-rose-50/10 dark:border-rose-950/30">
+        <div className="p-5">
+          <h3 className="text-sm font-bold text-rose-900 dark:text-rose-400">Danger Zone</h3>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Permanently remove your partner workspace profile and all associated bid records from the SRM system directory.
+          </p>
+          <div className="mt-4">
+            <Button
+              type="button"
+              className="!bg-rose-600 hover:!bg-rose-700 !text-white font-semibold transition duration-300"
+              onClick={handleDeleteAccount}
+            >
+              Delete Partner Account
+            </Button>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }

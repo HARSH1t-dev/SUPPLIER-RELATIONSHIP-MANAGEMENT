@@ -13,8 +13,9 @@ import {
   ShoppingCart,
   Users,
   UserCog,
+  ReceiptText,
 } from 'lucide-react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, Navigate } from 'react-router-dom';
 import { DashboardLayout } from './DashboardLayout.jsx';
 
 const adminItems = [
@@ -33,6 +34,7 @@ const adminItems = [
       { label: 'Purchase Orders', to: '/admin/orders', icon: ShoppingCart },
       { label: 'Order Tracker', to: '/admin/order-tracker', icon: ClipboardList },
       { label: 'Receipts & Reviews', to: '/admin/receipts-reviews', icon: PackageOpen },
+      { label: 'Invoices & Billing', to: '/admin/invoices', icon: ReceiptText },
     ],
   },
   {
@@ -57,6 +59,13 @@ const adminItems = [
 ];
 
 export function AdminLayout() {
+  const storedUser = sessionStorage.getItem('srm_user');
+  const user = storedUser ? JSON.parse(storedUser) : null;
+
+  if (!user || user.role !== 'admin') {
+    return <Navigate to="/login" replace />;
+  }
+
   return (
     <DashboardLayout items={adminItems} title="SRM Portal" subtitle="Admin Console">
       <Outlet />

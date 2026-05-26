@@ -1,5 +1,5 @@
 import { Bell, Gauge, History, Inbox, LayoutDashboard, ReceiptText, ShoppingBag, Star, Truck, UserRound } from 'lucide-react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, Navigate } from 'react-router-dom';
 import { DashboardLayout } from './DashboardLayout.jsx';
 
 const supplierItems = [
@@ -41,6 +41,13 @@ const supplierItems = [
 ];
 
 export function SupplierLayout() {
+  const storedUser = sessionStorage.getItem('srm_user');
+  const user = storedUser ? JSON.parse(storedUser) : null;
+
+  if (!user || user.role !== 'supplier') {
+    return <Navigate to="/login" replace />;
+  }
+
   return (
     <DashboardLayout items={supplierItems} title="Supplier Portal" subtitle="Partner Workspace">
       <Outlet />

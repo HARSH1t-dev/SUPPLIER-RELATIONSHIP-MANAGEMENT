@@ -9,7 +9,7 @@ import { useDisclosure } from '../../hooks/useDisclosure.js';
 import { receiving as mockReceiving } from '../../data/mockData.js';
 import { number } from '../../utils/formatters.js';
 import { useState, useEffect } from 'react';
-import { Plus, Check } from 'lucide-react';
+import { Plus, Check, UploadCloud } from 'lucide-react';
 
 const initialForm = {
   receipt: '',
@@ -84,6 +84,7 @@ export function GoodsReceiving() {
         item: parsed.item,
         received: parsed.received,
         accepted: parsed.accepted,
+        items: parsed.items || []
       });
     } catch (err) {
       console.error(err);
@@ -154,21 +155,51 @@ export function GoodsReceiving() {
       <Modal title="Record Goods Receipt" isOpen={uploadGrnModal.isOpen} onClose={resetAndClose} size={pdfBlobUrl ? 'xxl' : 'xl'}>
         <div className={`grid gap-6 ${pdfBlobUrl ? 'md:grid-cols-2' : ''}`}>
           <div>
-            <div className="mb-4 rounded-lg border border-dashed border-slate-300 p-4 text-center dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">Upload Delivery Receipt PDF to Auto-Fill Receipt Form</p>
-              <input
-                type="file"
-                accept=".pdf"
-                className="text-xs text-slate-600 dark:text-slate-400 block mx-auto cursor-pointer"
-                onChange={handlePdfUpload}
-                disabled={isParsing}
-              />
-              <div className="mt-2">
-                <a href={`${import.meta.env.BASE_URL}samples/delivery-receipt.pdf`} download className="text-xs text-brand-600 hover:text-brand-500 underline font-semibold">
-                  Download Sample Delivery Receipt
-                </a>
+            <div className="mb-5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-5 text-center transition hover:bg-slate-100/50 dark:hover:bg-slate-900">
+              <div className="flex flex-col items-center justify-center">
+                <div className="rounded-full bg-blue-50 dark:bg-blue-950/40 p-2.5 text-blue-600 dark:text-blue-400 mb-2">
+                  <UploadCloud className={`h-5 w-5 ${isParsing ? 'animate-bounce' : ''}`} />
+                </div>
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                  Auto-fill from Document
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 mb-3">
+                  Upload a delivery receipt PDF to automatically extract line items
+                </p>
+                
+                <input
+                  type="file"
+                  accept=".pdf"
+                  id="grn-pdf-upload-input"
+                  className="hidden"
+                  onChange={handlePdfUpload}
+                  disabled={isParsing}
+                />
+                <label
+                  htmlFor="grn-pdf-upload-input"
+                  className="cursor-pointer inline-flex items-center gap-2 rounded-lg bg-brand-600 hover:bg-brand-500 dark:bg-brand-500 dark:hover:bg-brand-400 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition duration-150 mb-2.5"
+                >
+                  Choose PDF File
+                </label>
+
+                <div className="flex items-center justify-center gap-1.5 text-[11px]">
+                  <span className="text-slate-400">Or get a template:</span>
+                  <a 
+                    href={`${import.meta.env.BASE_URL}samples/delivery-receipt.pdf`} 
+                    download 
+                    className="text-brand-600 hover:text-brand-500 hover:underline font-semibold"
+                  >
+                    Download Sample Delivery Receipt
+                  </a>
+                </div>
+                
+                {isParsing && (
+                  <p className="mt-3 text-[11px] font-medium text-blue-600 dark:text-blue-400 animate-pulse flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-ping"></span>
+                    Extracting delivery records...
+                  </p>
+                )}
               </div>
-              {isParsing && <p className="mt-1.5 text-[11px] text-blue-500 animate-pulse">Extracting delivery records...</p>}
             </div>
              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
               <div className="grid gap-4 sm:grid-cols-2">

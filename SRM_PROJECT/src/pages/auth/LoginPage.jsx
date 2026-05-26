@@ -186,6 +186,7 @@ export function LoginPage() {
           localStorage.removeItem('remembered_role');
           localStorage.removeItem('remember_me');
         }
+        sessionStorage.setItem('srm_user', JSON.stringify(data.user));
         navigate(data.user?.role === 'admin' ? '/admin' : '/supplier');
       })
       .catch((error) => {

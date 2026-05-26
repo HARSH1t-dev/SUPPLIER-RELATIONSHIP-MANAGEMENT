@@ -27,6 +27,7 @@ $input = json_decode(file_get_contents('php://input'), true);
 $input = is_array($input) ? $input : [];
 
 $fullName = isset($input['fullName']) ? trim((string) $input['fullName']) : '';
+$companyName = isset($input['companyName']) ? trim((string) $input['companyName']) : '';
 $email = isset($input['email']) ? trim((string) $input['email']) : '';
 $password = isset($input['password']) ? (string) $input['password'] : '';
 $role = isset($input['role']) ? trim((string) $input['role']) : 'supplier';
@@ -87,8 +88,8 @@ if ($checkResult->fetch_assoc()) {
 $checkStmt->close();
 
 $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-$insertStmt = $connection->prepare('INSERT INTO users (full_name, email, role, password_hash) VALUES (?, ?, ?, ?)');
-$insertStmt->bind_param('ssss', $fullName, $email, $role, $passwordHash);
+$insertStmt = $connection->prepare('INSERT INTO users (full_name, email, role, password_hash, company_name) VALUES (?, ?, ?, ?, ?)');
+$insertStmt->bind_param('sssss', $fullName, $email, $role, $passwordHash, $companyName);
 
 if (!$insertStmt->execute()) {
     $insertStmt->close();
@@ -109,6 +110,7 @@ $_SESSION['user'] = [
     'fullName' => $fullName,
     'email' => $email,
     'role' => $role,
+    'companyName' => $companyName,
 ];
 
 echo json_encode([

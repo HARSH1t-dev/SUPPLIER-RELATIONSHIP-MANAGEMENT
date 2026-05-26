@@ -41,10 +41,13 @@ export const parseRfqPdf = (text, fileName) => {
   const cleanText = text.toLowerCase();
   
   // Try to find target values
-  const valueMatch = text.match(/\$[0-9,]+(\.[0-9]{2})?/) || text.match(/\d+,\d{3}/);
+  const valueMatch = text.match(/(?:estimated\s+value|\bvalue\b)\s*:?\s*(\$[0-9,]+(\.[0-9]{2})?|\d+,\d{3})/i) ||
+                     text.match(/\$[0-9,]+(\.[0-9]{2})?/) || 
+                     text.match(/\d+,\d{3}/);
   let targetValue = '250000';
   if (valueMatch) {
-    targetValue = valueMatch[0].replace(/[^0-9.]/g, '');
+    const matchedStr = valueMatch[1] || valueMatch[0];
+    targetValue = matchedStr.replace(/[^0-9.]/g, '');
   }
   
   // Try to find deadlines (YYYY-MM-DD)
@@ -74,8 +77,9 @@ export const parseBidPdf = (text, fileName) => {
   const cleanText = text.toLowerCase();
   
   // Quoted Price
-  const priceMatch = text.match(/\$[0-9,]+/) || text.match(/\b\d{5,6}\b/);
-  const price = priceMatch ? Number(priceMatch[0].replace(/[^0-9.]/g, '')) : 120000;
+  const priceMatch = text.match(/(?:total\s+bid\s+price|total\s+bid|total\s+price|\btotal\b)\s*:?\s*(\$[0-9,]+(\.[0-9]{2})?|\d+,\d{3})/i) ||
+                     text.match(/\$[0-9,]+/);
+  const price = priceMatch ? Number((priceMatch[1] || priceMatch[0]).replace(/[^0-9.]/g, '')) : 120000;
   
   // Delivery/Lead times
   const deliveryMatch = text.match(/\d+\s*(days|weeks|months)/i);
@@ -104,44 +108,67 @@ export const parseGrnPdf = (text, fileName) => {
   const poMatch = text.match(/po-\d+/i) || text.match(/po\s*#?\s*\d+/i);
   const po = poMatch ? poMatch[0].toUpperCase().replace(/\s*#\s*/, '-') : 'PO-88021';
   
-  // Look for items and their quantities dynamically
+  // Dynamic Table-Row extraction using a robust regex pattern
   const itemsList = [];
-  const itemConfigs = [
-    { key: 'Hydraulic Valves', keywords: ['hydraulic valves', 'valves'], defaultRec: 500, defaultAcc: 498 },
-    { key: 'Steel Brackets', keywords: ['steel brackets', 'brackets'], defaultRec: 1000, defaultAcc: 992 },
-    { key: 'Copper Cables', keywords: ['copper cables', 'cables'], defaultRec: 200, defaultAcc: 200 },
-    { key: 'Industrial Bearings', keywords: ['industrial bearings', 'bearings'], defaultRec: 2500, defaultAcc: 2490 }
-  ];
+  const rowRegex = /\b(\d+)\s+([A-Za-z0-9\s\(\)#\.-]+?)\s+(\d{1,3}(?:,\d{3})*(?:m)?)\s+(\d{1,3}(?:,\d{3})*(?:m)?)\s+(\d{1,3}(?:,\d{3})*(?:m)?)\s+(Accepted|Rejected|Pending|Review\s+required|Approved|Evaluating)\b/gi;
+  
+  let match;
+  while ((match = rowRegex.exec(text)) !== null) {
+    const name = match[2].trim();
+    const receivedVal = match[4].replace(/[^0-9]/g, '');
+    const acceptedVal = match[5].replace(/[^0-9]/g, '');
+    
+    // Ignore lines that matched headers or metadata (like line #s that matched other items)
+    if (name.toLowerCase() === 'item description' || name.toLowerCase() === 'description') {
+      continue;
+    }
+    
+    itemsList.push({
+      name: name,
+      received: parseInt(receivedVal, 10) || 0,
+      accepted: parseInt(acceptedVal, 10) || 0
+    });
+  }
 
-  itemConfigs.forEach(config => {
-    const foundKw = config.keywords.find(kw => cleanText.includes(kw));
-    if (foundKw) {
-      let received = config.defaultRec;
-      let accepted = config.defaultAcc;
+  // Fallback 1: Keyword-based lookup if regex table parser failed
+  if (itemsList.length === 0) {
+    const itemConfigs = [
+      { key: 'Hydraulic Valves', keywords: ['hydraulic valves', 'valves'], defaultRec: 500, defaultAcc: 498 },
+      { key: 'Steel Brackets', keywords: ['steel brackets', 'brackets'], defaultRec: 1000, defaultAcc: 992 },
+      { key: 'Copper Cables', keywords: ['copper cables', 'cables'], defaultRec: 200, defaultAcc: 200 },
+      { key: 'Industrial Bearings', keywords: ['industrial bearings', 'bearings'], defaultRec: 2500, defaultAcc: 2490 }
+    ];
 
-      // Try to find numbers close to the item name in the text
-      const index = cleanText.indexOf(foundKw);
-      if (index !== -1) {
-        const windowText = text.slice(index, index + 120);
-        const numbers = windowText.match(/\b\d{1,3}(,\d{3})*(m)?\b/g);
-        if (numbers && numbers.length >= 2) {
-          const nums = numbers.map(n => parseInt(n.replace(/[^0-9]/g, ''), 10));
-          if (nums.length >= 2) {
-            accepted = nums[nums.length - 1];
-            received = nums[nums.length - 2];
+    itemConfigs.forEach(config => {
+      const foundKw = config.keywords.find(kw => cleanText.includes(kw));
+      if (foundKw) {
+        let received = config.defaultRec;
+        let accepted = config.defaultAcc;
+
+        // Try to find numbers close to the item name in the text
+        const index = cleanText.indexOf(foundKw);
+        if (index !== -1) {
+          const windowText = text.slice(index, index + 120);
+          const numbers = windowText.match(/\b\d{1,3}(,\d{3})*(m)?\b/g);
+          if (numbers && numbers.length >= 2) {
+            const nums = numbers.map(n => parseInt(n.replace(/[^0-9]/g, ''), 10));
+            if (nums.length >= 2) {
+              accepted = nums[nums.length - 1];
+              received = nums[nums.length - 2];
+            }
           }
         }
+
+        itemsList.push({
+          name: config.key,
+          received: received,
+          accepted: accepted
+        });
       }
+    });
+  }
 
-      itemsList.push({
-        name: config.key,
-        received: received,
-        accepted: accepted
-      });
-    }
-  });
-
-  // Fallback if no specific items found
+  // Fallback 2: Hardcoded single item if all else fails
   if (itemsList.length === 0) {
     itemsList.push({ name: 'Industrial Bearings', received: 2500, accepted: 2490 });
   }
@@ -174,8 +201,9 @@ export const parseInvoicePdf = (text, fileName) => {
   const po = poMatch ? poMatch[0].toUpperCase().replace(/\s*#\s*/, '-') : 'PO-88022';
   
   // Invoice Amount
-  const amountMatch = text.match(/\$[0-9,]+/) || text.match(/\b\d{4,6}\b/);
-  const amount = amountMatch ? Number(amountMatch[0].replace(/[^0-9.]/g, '')) : 185000;
+  const amountMatch = text.match(/(?:total\s+due|total\s+amount|amount\s+due|\btotal\b)\s*:?\s*(\$[0-9,]+(\.[0-9]{2})?|\d+,\d{3})/i) ||
+                      text.match(/\$[0-9,]+/);
+  const amount = amountMatch ? Number((amountMatch[1] || amountMatch[0]).replace(/[^0-9.]/g, '')) : 185000;
   
   // Due Date (default to 14 days from now)
   const now = new Date();

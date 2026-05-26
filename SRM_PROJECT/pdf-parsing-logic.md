@@ -193,7 +193,7 @@ flowchart TD
 | Field | Regex / Logic | Fallback |
 |:---|:---|:---|
 | `title` | Derived from `fileName` (strip extension, replace `_-` with spaces, capitalize) | `'RFQ Sourcing Contract'` |
-| `value` | `/\$[0-9,]+(\.[0-9]{2})?/` or `/\d+,\d{3}/` | `'250000'` |
+| `value` | `/(?:estimated\s+value|\bvalue\b)\s*:?\s*(\$[0-9,]+(\.[0-9]{2})?|\d+,\d{3})/i` | `'250000'` |
 | `deadline` | `/\d{4}-\d{2}-\d{2}/` or `/\d{2}\/\d{2}\/\d{4}/` | `'2026-08-30'` |
 | `category` | Keyword search: `logistics`→Logistics, `facility/hvac`→Facilities, `service/consulting`→Services | `'Manufacturing'` |
 
@@ -208,9 +208,9 @@ flowchart TD
 | Field | Regex / Logic | Fallback |
 |:---|:---|:---|
 | `rfqPackage` | `/rfq-\d+/i` | `'RFQ-24061'` |
-| `price` | `/\$[0-9,]+/` or `/\b\d{5,6}\b/` | `120000` |
-| `delivery` | `/\d+\s*(days\|weeks\|months)/i` | `'15 Days'` |
-| `warranty` | `/\d+\s*(year\|yr)/i` + append `'s'` | `'2 Years'` |
+| `price` | `/(?:total\s+bid\s+price|total\s+bid|total\s+price|\btotal\b)\s*:?\s*(\$[0-9,]+(\.[0-9]{2})?|\d+,\d{3})/i` | `120000` |
+| `delivery` | `/\d+\s*(days|weeks|months)/i` | `'15 Days'` |
+| `warranty` | `/\d+\s*(year|yr)/i` + append `'s'` | `'2 Years'` |
 
 **Returns**: `{ rfqPackage, price, delivery, warranty }`
 
@@ -224,9 +224,9 @@ flowchart TD
 |:---|:---|:---|
 | `receipt` | `/rec-\d+/i` or `/receipt\s*#?\s*\d+/i` | `'REC-' + random 4-digit` |
 | `po` | `/po-\d+/i` or `/po\s*#?\s*\d+/i` | `'PO-88021'` |
-| `item` | Keyword: `steel`→Steel Brackets, `valve`→Hydraulic Valves, `cable`→Copper Cables | `'Industrial Bearings'` |
-| `received` | `/qty\s*:\s*\d+/i` or `/quantity\s*:\s*\d+/i` or `/\b\d{3,5}\b/` | `2500` |
-| `accepted` | `received - random(0..14)` | `received - small deviation` |
+| `items` | Multi-item row regex: `\b(\d+)\s+([A-Za-z0-9\s\(\)#\.-]+?)\s+(\d{1,3}(?:,\d{3})*(?:m)?)\s+(\d{1,3}(?:,\d{3})*(?:m)?)\s+(\d{1,3}(?:,\d{3})*(?:m)?)\s+(Accepted|Rejected|Pending|Review\s+required|Approved|Evaluating)\b` | Parses individual items |
+| `received` | Sum of all parsed line-item received quantities | `2500` |
+| `accepted` | Sum of all parsed line-item accepted quantities | `2490` |
 
 **Returns**: `{ receipt, po, item, received, accepted }`
 
@@ -240,7 +240,7 @@ flowchart TD
 |:---|:---|:---|
 | `id` | `/inv-\d+/i` or `/invoice\s*#?\s*\d+/i` | `'INV-' + random 54xx` |
 | `po` | `/po-\d+/i` or `/po\s*#?\s*\d+/i` | `'PO-88022'` |
-| `amount` | `/\$[0-9,]+/` or `/\b\d{4,6}\b/` | `185000` |
+| `amount` | `/(?:total\s+due|total\s+amount|amount\s+due|\btotal\b)\s*:?\s*(\$[0-9,]+(\.[0-9]{2})?|\d+,\d{3})/i` | `185000` |
 | `submitted` | Computed: `today` | Today's date |
 | `due` | Computed: `today + 14 days` | 14 days from now |
 

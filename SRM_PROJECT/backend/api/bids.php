@@ -24,6 +24,7 @@ if ($method === 'GET') {
         $row['price'] = (float)$row['price'];
         $row['score'] = (int)$row['score'];
         $row['best'] = (bool)$row['best'];
+        $row['user_id'] = $row['user_id'] !== null ? (int)$row['user_id'] : null;
         $bids[] = $row;
     }
     echo json_encode([
@@ -44,6 +45,8 @@ if ($method === 'POST') {
     $warranty = isset($input['warranty']) ? trim((string)$input['warranty']) : '';
     $score = isset($input['score']) ? (int)$input['score'] : 85;
     $best = isset($input['best']) && $input['best'] ? 1 : 0;
+    $user_id = isset($input['userId']) && $input['userId'] !== '' ? (int)$input['userId'] : null;
+    $supplier_name = isset($input['supplierName']) ? trim((string)$input['supplierName']) : null;
 
     if ($id === '' || $rfq_package === '') {
         http_response_code(422);
@@ -54,8 +57,8 @@ if ($method === 'POST') {
         exit;
     }
 
-    $stmt = $connection->prepare('INSERT INTO bids (id, rfq_package, price, delivery, warranty, score, best) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE rfq_package=?, price=?, delivery=?, warranty=?, score=?, best=?');
-    $stmt->bind_param('ssdssiisdssii', $id, $rfq_package, $price, $delivery, $warranty, $score, $best, $rfq_package, $price, $delivery, $warranty, $score, $best);
+    $stmt = $connection->prepare('INSERT INTO bids (id, rfq_package, price, delivery, warranty, score, best, user_id, supplier_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE rfq_package=?, price=?, delivery=?, warranty=?, score=?, best=?, user_id=?, supplier_name=?');
+    $stmt->bind_param('ssdssiisssdssiiss', $id, $rfq_package, $price, $delivery, $warranty, $score, $best, $user_id, $supplier_name, $rfq_package, $price, $delivery, $warranty, $score, $best, $user_id, $supplier_name);
 
     if ($stmt->execute()) {
         // Increment bid count in rfqs table

@@ -48,7 +48,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 $connection = db_connection();
-$stmt = $connection->prepare('SELECT id, full_name, role, password_hash FROM users WHERE email = ? LIMIT 1');
+$stmt = $connection->prepare('SELECT id, full_name, role, password_hash, company_name FROM users WHERE email = ? LIMIT 1');
 $stmt->bind_param('s', $email);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -88,6 +88,7 @@ $_SESSION['user'] = [
     'fullName' => $user['full_name'],
     'email' => $email,
     'role' => $user['role'],
+    'companyName' => $user['company_name'] !== null ? $user['company_name'] : 'Apex Industrial Components',
 ];
 
 unset($user['password_hash']);

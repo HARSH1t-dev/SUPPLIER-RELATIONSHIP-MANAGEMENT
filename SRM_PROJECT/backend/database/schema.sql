@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(190) NOT NULL UNIQUE,
   role ENUM('admin', 'supplier') NOT NULL DEFAULT 'supplier',
   password_hash VARCHAR(255) NOT NULL,
+  company_name VARCHAR(190) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -31,6 +32,8 @@ CREATE TABLE IF NOT EXISTS bids (
   warranty VARCHAR(100) NOT NULL,
   score INT UNSIGNED DEFAULT 85,
   best INT DEFAULT 0, -- 0 for false, 1 for true
+  user_id INT UNSIGNED DEFAULT NULL,
+  supplier_name VARCHAR(120) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -22,6 +22,7 @@ import { Settings } from '../pages/admin/Settings.jsx';
 import { AuditLogs } from '../pages/admin/AuditLogs.jsx';
 import { RoleManagement } from '../pages/admin/RoleManagement.jsx';
 import { AdminProfile } from '../pages/admin/AdminProfile.jsx';
+import { AdminInvoices } from '../pages/admin/AdminInvoices.jsx';
 import { SupplierDashboard } from '../pages/supplier/Dashboard.jsx';
 import { SupplierProducts } from '../pages/supplier/Products.jsx';
 import { SupplierRFQs } from '../pages/supplier/RFQs.jsx';
@@ -70,6 +71,7 @@ export const appRoutes = [
       { path: 'settings', element: <Settings /> },
       { path: 'audit-logs', element: <AuditLogs /> },
       { path: 'roles', element: <RoleManagement /> },
+      { path: 'invoices', element: <AdminInvoices /> },
       { path: 'profile', element: <AdminProfile /> },
       { path: 'compliance', element: <Navigate to="/admin/reviews" replace /> },
       { path: 'logistics', element: <Navigate to="/admin/orders" replace /> },
