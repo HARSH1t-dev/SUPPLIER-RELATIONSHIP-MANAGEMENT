@@ -1,21 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { Sun, Moon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ThemeToggle() {
   const [isDark, setIsDark] = useState(false);
-
-  // Check initial theme on load
   useEffect(() => {
-    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    if (localStorage.theme === 'dark') {
       document.documentElement.classList.add('dark');
       setIsDark(true);
     } else {
       document.documentElement.classList.remove('dark');
       setIsDark(false);
+      if (!('theme' in localStorage)) {
+        localStorage.theme = 'light';
+      }
     }
   }, []);
 
-  // Toggle handler
   const toggleTheme = () => {
     if (isDark) {
       document.documentElement.classList.remove('dark');
@@ -29,16 +30,29 @@ export default function ThemeToggle() {
   };
 
   return (
-    <button
-      onClick={toggleTheme}
-      className="p-2 rounded-full transition-all duration-300 hover:bg-black/10 dark:hover:bg-white/10 hover:backdrop-blur-md"
-      aria-label="Toggle Theme"
-    >
-      {isDark ? (
-        <Sun className="w-5 h-5 text-yellow-400" />
-      ) : (
-        <Moon className="w-5 h-5 text-slate-700" />
-      )}
-    </button>
+    <div className="flex items-center justify-center">
+      <button
+        onClick={toggleTheme}
+        className="relative flex items-center justify-center h-10 w-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 transition-colors duration-300 focus:outline-none border border-slate-200 dark:border-slate-800 cursor-pointer shadow-sm overflow-hidden"
+        aria-label="Toggle Theme"
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={isDark ? 'dark-icon' : 'light-icon'}
+            initial={{ rotate: -90, scale: 0.3, opacity: 0 }}
+            animate={{ rotate: 0, scale: 1, opacity: 1 }}
+            exit={{ rotate: 90, scale: 0.3, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 600, damping: 24 }}
+            className="flex items-center justify-center"
+          >
+            {isDark ? (
+              <Moon className="w-5 h-5 text-white fill-white" />
+            ) : (
+              <Sun className="w-5 h-5 text-amber-500 fill-amber-500" />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </button>
+    </div>
   );
 }

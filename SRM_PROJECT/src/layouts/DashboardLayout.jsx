@@ -14,7 +14,7 @@ export function DashboardLayout({ items, title, subtitle, children }) {
   );
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Subtle ambient gradient behind the content area */}
       <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(ellipse_80%_50%_at_60%_-10%,rgba(37,99,235,0.05),transparent)]" />
       <Sidebar items={items} title={title} subtitle={subtitle} isOpen={menu.isOpen} onClose={menu.close} />

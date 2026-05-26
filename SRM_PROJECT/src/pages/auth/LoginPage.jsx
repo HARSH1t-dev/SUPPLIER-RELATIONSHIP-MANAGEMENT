@@ -107,13 +107,17 @@ const Feature = ({ icon, title, sub, theme }) => (
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/SRM_PROJECT/backend/api';
-  const [step, setStep] = useState('select');
-  const [role, setRole] = useState(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1/SUPPLIER-RELATIONSHIP-MANAGEMENT/SRM_PROJECT/backend/api').replace(/\/$/, '');
+  const [email, setEmail] = useState(() => localStorage.getItem('remembered_email') || '');
+  const [password, setPassword] = useState(() => localStorage.getItem('remembered_password') || '');
+  const [role, setRole] = useState(() => localStorage.getItem('remembered_role') || null);
+  const [remember, setRemember] = useState(() => localStorage.getItem('remember_me') === 'true');
+  const [step, setStep] = useState(() => {
+    const hasRemembered = localStorage.getItem('remember_me') === 'true';
+    const rememberedRole = localStorage.getItem('remembered_role');
+    return (hasRemembered && rememberedRole) ? 'login' : 'select';
+  });
   const [showPw, setShowPw] = useState(false);
-  const [remember, setRemember] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -171,6 +175,17 @@ export function LoginPage() {
         return data;
       })
       .then((data) => {
+        if (remember) {
+          localStorage.setItem('remembered_email', email);
+          localStorage.setItem('remembered_password', password);
+          localStorage.setItem('remembered_role', role);
+          localStorage.setItem('remember_me', 'true');
+        } else {
+          localStorage.removeItem('remembered_email');
+          localStorage.removeItem('remembered_password');
+          localStorage.removeItem('remembered_role');
+          localStorage.removeItem('remember_me');
+        }
         navigate(data.user?.role === 'admin' ? '/admin' : '/supplier');
       })
       .catch((error) => {

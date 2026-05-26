@@ -35,12 +35,13 @@ import { Notifications } from '../pages/supplier/Notifications.jsx';
 import { SupplierKpiPerformance } from '../pages/supplier/KpiPerformance.jsx';
 import { SupplierProfile } from '../pages/supplier/Profile.jsx';
 import { NotFound } from '../pages/NotFound.jsx';
+import { RootRedirect } from '../components/RootRedirect.jsx';
 
 export const appRoutes = [
   {
     element: <PublicLayout />,
     children: [
-      { path: '/', element: <Navigate to="/login" replace /> },
+      { path: '/', element: <RootRedirect /> },
       { path: '/home', element: <LandingPage /> },
       { path: '/login', element: <LoginPage /> },
       { path: '/register', element: <RegisterPage /> },

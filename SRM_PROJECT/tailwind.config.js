@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: 'class', //(ADDED THIS LINE FOR THE DARK THEME)
-  content: ['./index.html', './src/**/*.{js,jsx}'],
+  content: ['./index.html', './src/**/*.{js,jsx}', './Theme.jsx'],
   theme: {
     extend: {
       boxShadow: {

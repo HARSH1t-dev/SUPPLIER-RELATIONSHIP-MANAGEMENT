@@ -6,7 +6,7 @@ export function Pagination({ page = 1, total = 1, onPrevious, onNext }) {
   const canNext = page < total;
 
   return (
-    <div className="flex items-center justify-between border-t border-slate-100 px-5 py-4 text-sm text-slate-500">
+    <div className="flex items-center justify-between border-t border-slate-100 px-5 py-4 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
       <span>
         Page {page} of {total}
       </span>

@@ -33,7 +33,7 @@ function LoaderDots() {
 export function RegisterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/SRM_PROJECT/backend/api';
+  const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1/SUPPLIER-RELATIONSHIP-MANAGEMENT/SRM_PROJECT/backend/api').replace(/\/$/, '');
   const [role, setRole] = useState(searchParams.get('role') || 'supplier');
   const [currentStep, setCurrentStep] = useState(0);
   const [fullName, setFullName] = useState('');

@@ -4,11 +4,11 @@ import { Button } from '../components/Button.jsx';
 
 export function PublicLayout() {
   const location = useLocation();
-  const isImmersiveAuth = location.pathname === '/login' || location.pathname === '/register';
+  const showHeader = location.pathname === '/home';
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {!isImmersiveAuth ? (
+      {showHeader ? (
         <header className="border-b border-slate-200 bg-white">
           <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             <Link to="/" className="flex items-center gap-3">

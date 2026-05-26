@@ -9,23 +9,27 @@ export function StatCard({ label, value, change, trend = 'up', icon: Icon }) {
       {/* Subtle gradient accent in corner */}
       <div
         className={`pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-bl-[2.5rem] opacity-60 transition-opacity duration-300 group-hover:opacity-100 ${
-          trend === 'up' ? 'bg-gradient-to-bl from-emerald-100/80' : 'bg-gradient-to-bl from-amber-100/80'
+          trend === 'up' 
+            ? 'bg-gradient-to-bl from-emerald-100/80 dark:from-emerald-950/20' 
+            : 'bg-gradient-to-bl from-amber-100/80 dark:from-amber-950/20'
         }`}
       />
       <div className="relative flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-slate-500">{label}</p>
-          <p className="mt-2 text-2xl font-bold tabular-nums text-slate-950">{value}</p>
+          <p className="truncate text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
+          <p className="mt-2 text-2xl font-bold tabular-nums text-slate-950 dark:text-white">{value}</p>
         </div>
         <div className="flex flex-col items-end gap-2">
           {Icon && (
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
               <Icon className="h-4 w-4" />
             </span>
           )}
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-              trend === 'up' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+              trend === 'up' 
+                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' 
+                : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
             }`}
           >
             <TrendIcon className="h-3.5 w-3.5" />
