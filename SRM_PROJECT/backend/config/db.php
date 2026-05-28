@@ -9,6 +9,7 @@ function db_config(): array
         'user' => getenv('DB_USER') ?: 'root',
         'pass' => getenv('DB_PASS') ?: '',
         'name' => getenv('DB_NAME') ?: 'srm_portal',
+        'port' => 3307, // Added custom port tracking for XAMPP conflict
     ];
 }
 
@@ -19,7 +20,8 @@ function db_connection(): mysqli
         $config['host'],
         $config['user'],
         $config['pass'],
-        $config['name']
+        $config['name'],
+        $config['port'] // Added port variable right here
     );
 
     if ($connection->connect_error) {
@@ -27,7 +29,7 @@ function db_connection(): mysqli
         header('Content-Type: application/json');
         echo json_encode([
             'success' => false,
-            'message' => 'Database connection failed.',
+            'message' => 'Database connection failed: ' . $connection->connect_error,
         ]);
         exit;
     }
