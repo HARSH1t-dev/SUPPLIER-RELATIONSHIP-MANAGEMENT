@@ -1,5 +1,5 @@
 export const adminStats = [
-  { label: 'Managed Spend', value: '$24.8M', change: '+12.4%', trend: 'up' },
+  { label: 'Managed Spend', value: '₹24.8M', change: '+12.4%', trend: 'up' },
   { label: 'Active Suppliers', value: '1,284', change: '+8.1%', trend: 'up' },
   { label: 'Open RFQs', value: '76', change: '-4.2%', trend: 'down' },
   { label: 'On-time Delivery', value: '94.6%', change: '+2.8%', trend: 'up' },
@@ -7,7 +7,7 @@ export const adminStats = [
 
 export const supplierStats = [
   { label: 'Open RFQs', value: '18', change: '+5 new', trend: 'up' },
-  { label: 'Active Orders', value: '42', change: '$840K', trend: 'up' },
+  { label: 'Active Orders', value: '42', change: '₹840K', trend: 'up' },
   { label: 'Submitted Bids', value: '31', change: '64% win rate', trend: 'up' },
   { label: 'Rating', value: '4.8', change: '+0.2', trend: 'up' },
 ];

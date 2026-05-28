@@ -12,14 +12,14 @@ export function Settings() {
         <CardHeader title="Procurement Configuration" />
         <form className="grid gap-4 p-5 md:grid-cols-2">
           <FormField label="Default currency">
-            <select className={inputClass}>
+            <select className={inputClass} defaultValue="INR">
               <option>USD</option>
               <option>EUR</option>
               <option>INR</option>
             </select>
           </FormField>
           <FormField label="Approval threshold">
-            <input className={inputClass} placeholder="$100,000" />
+            <input className={inputClass} placeholder="₹100,000" />
           </FormField>
           <FormField label="RFQ minimum bids">
             <input className={inputClass} type="number" defaultValue="3" />

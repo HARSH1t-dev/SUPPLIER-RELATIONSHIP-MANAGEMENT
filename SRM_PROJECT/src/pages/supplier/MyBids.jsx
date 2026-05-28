@@ -260,7 +260,7 @@ export function MyBids() {
                       placeholder="e.g. RFQ-24061"
                     />
                   </FormField>
-                  <FormField label="Quoted Price ($)">
+                  <FormField label="Quoted Price (₹)">
                     <input 
                       className={inputClass} 
                       type="number"

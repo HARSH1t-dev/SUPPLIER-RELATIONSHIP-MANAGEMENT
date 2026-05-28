@@ -1,4 +1,4 @@
-import { Bell, Gauge, History, Inbox, LayoutDashboard, ReceiptText, ShoppingBag, Star, Truck, UserRound } from 'lucide-react';
+import { Bell, Gauge, History, Inbox, LayoutDashboard, Package, ReceiptText, ShoppingBag, Star, Truck, UserRound } from 'lucide-react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { DashboardLayout } from './DashboardLayout.jsx';
 
@@ -7,6 +7,7 @@ const supplierItems = [
   {
     section: 'Sourcing',
     items: [
+      { label: 'Product Catalog', to: '/supplier/products', icon: Package },
       { label: 'RFQ Sourcing Inbox', to: '/supplier/rfqs', icon: Inbox },
       { label: 'My Bids', to: '/supplier/bids', icon: ReceiptText },
       { label: 'Bid History', to: '/supplier/bid-history', icon: History },

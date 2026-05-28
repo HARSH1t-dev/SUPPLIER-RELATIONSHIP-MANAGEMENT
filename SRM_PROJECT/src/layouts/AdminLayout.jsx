@@ -5,6 +5,7 @@ import {
   GitCompare,
   LayoutDashboard,
   ListChecks,
+  Package,
   PackageOpen,
   PieChart,
   ScrollText,
@@ -31,6 +32,7 @@ const adminItems = [
   {
     section: 'Procurement',
     items: [
+      { label: 'Product Management', to: '/admin/products', icon: Package },
       { label: 'Purchase Orders', to: '/admin/orders', icon: ShoppingCart },
       { label: 'Order Tracker', to: '/admin/order-tracker', icon: ClipboardList },
       { label: 'Receipts & Reviews', to: '/admin/receipts-reviews', icon: PackageOpen },

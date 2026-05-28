@@ -255,7 +255,7 @@ export function RFQManagement() {
                 <FormField label="Target value">
                   <input
                     className={inputClass}
-                    placeholder="$500,000"
+                    placeholder="₹500,000"
                     value={form.value}
                     onChange={(event) => updateForm('value', event.target.value)}
                   />

@@ -23,6 +23,7 @@ The SRM Portal simulates the workflows of a real-world corporate setting:
 
 | Real Corporate Department | SRM Portal Feature | Key Action |
 | :--- | :--- | :--- |
+| **Supplier Sales Team** | Product Catalog | Registers and showcases product SKUs and capabilities |
 | **Procurement Team** | RFQ Sourcing | Creates requests for pricing from suppliers |
 | **Sourcing Team** | Bid Evaluation | Compares bids in a side-by-side matrix |
 | **Purchasing Team** | Purchase Orders (PO) | Confirms orders with legally binding agreements |
@@ -35,6 +36,11 @@ The SRM Portal simulates the workflows of a real-world corporate setting:
 ---
 
 ## The Procurement Lifecycle: Step-by-Step
+
+### 0. Supplier Catalog Registration
+* **Role**: Supplier (Sales / Product Manager) & Admin (Procurement Manager)
+* **What happens**: Each supplier manages their own distinct catalog of SKUs, categories, list prices, and capacities.
+* **Shared Lookup Simulation**: The catalog is saved using supplier-specific local storage keys (`srm_products_{supplierName}`). The Admin can switch between different suppliers using a dropdown selector inside the **Product Management** console to view/inspect their live portfolios in real-time, replicating how corporate procurement systems partition supplier catalog indexes.
 
 ### 1. Sourcing Demand & RFQ Creation
 * **Role**: Admin (Procurement Manager)

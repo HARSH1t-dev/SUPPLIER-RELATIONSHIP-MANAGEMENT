@@ -19,6 +19,7 @@ This portal simulates the interactions between several corporate departments and
 | :--- | :--- | :--- | :--- |
 | **Procurement / Sourcing Team** | RFQ Management (Admin Console) | 2.2 RFQ Management | `rfqs` (D3) |
 | **Supplier (External Entity)** | RFQ Inbox & Bid Submission | 3.2 / 3.3 Bidding System | `bids` (D4) |
+| **Supplier Sales Team** | Product Catalog | 3.4 Product Catalog | `srm_products` (localStorage) |
 | **Sourcing / Purchasing Team** | Bid Comparison & PO Issuing | 2.3 / 2.4 PO Manager | `purchase_orders` (D5) |
 | **Warehouse / Logistics Team** | Goods Receipt Note (GRN) | 2.6 Goods Receiving | `goods_receipts` (D7) |
 | **Supplier Billing Department** | Invoice Submission | 3.4 Orders & Fulfillment | `invoices` (D8) |
@@ -28,9 +29,25 @@ This portal simulates the interactions between several corporate departments and
 
 ---
 
-## The 11-Step End-to-End Testing Flow
+## The 12-Step End-to-End Testing Flow
 
 Follow these steps sequentially to test the full Procurement Lifecycle.
+
+---
+
+### STEP 0 — Supplier Registers Product Catalog (Master SKU Data)
+* **Business Context**: Before bidding on sourcing requests, suppliers manage their unique SKU catalogs of offerings to showcase their capabilities and price guidelines to the procurement team.
+* **Actions**:
+  1. Open the portal, click **Login**, select **Supplier Portal**, and log in (e.g., using default supplier session showing company **Apex Industrial Components**).
+  2. Navigate to **Product Catalog** in the sidebar.
+  3. Verify the default items (Apex should see mechanical parts like *Hydraulic Valve Assembly*).
+  4. Click **Add offering** at the top right, fill in a new offering (e.g. SKU: `PRD-4409`, Offering: "Titanium Valve", Category: "Mechanical", Capacity: `500`, Price: `85000` INR), and save it.
+  5. Open the Supplier Portal representing a different company (e.g. **Vector Packaging Co.**) in another tab and verify they see their own catalog (packaging film, etc.) and do *not* see Apex's "Titanium Valve".
+  6. Switch to the **Admin Console** and navigate to **Product Management** under *Procurement* in the sidebar.
+  7. **UI Verification**: Use the **Supplier Dropdown** selector at the top right:
+     * Select **Apex Industrial Components**: Confirm the Admin sees the newly added `PRD-4409` "Titanium Valve".
+     * Select **Vector Packaging Co.**: Confirm the Admin sees only Vector's packaging catalog.
+  8. Go back to the **Supplier Portal** for Apex, click the red trash icon to soft-delete the item, and verify it disappears from the Admin's list for Apex in real-time.
 
 ---
 

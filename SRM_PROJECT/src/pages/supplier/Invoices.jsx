@@ -238,7 +238,7 @@ export function SupplierInvoices() {
                     placeholder="e.g. PO-88021"
                   />
                 </FormField>
-                <FormField label="Invoice Amount ($)">
+                <FormField label="Invoice Amount (₹)">
                   <input 
                     className={inputClass} 
                     type="number"
