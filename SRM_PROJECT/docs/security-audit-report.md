@@ -72,14 +72,21 @@ During the security scan, three critical parameter binding bugs were identified 
 
 To comply with transparency policies, the storage locations and safety mechanisms for all project data have been mapped:
 
-### A. Persistent Relational Storage (Local MySQL)
-All core records are saved on the XAMPP MySQL/MariaDB server in database `srm_portal`:
-- **`users`**: Customer/Admin records. Passwords are secure-hashed using standard **bcrypt** (`password_hash($password, PASSWORD_DEFAULT)`). Raw passwords are never stored.
-- **`rfqs`**: Procurement requests, categories, value schedules.
-- **`bids`**: Supplier bid proposals, commercial prices, lead times, warranties.
-- **`goods_receipts`**: Log of goods delivered and accepted at warehouses.
-- **`invoices`**: Supplier bills and due dates.
-- **`compliance_documents`**: Supplier certifications and ISO documents.
+### A. Persistent Relational Storage (Local MySQL / InnoDB)
+All core records are saved on the XAMPP MySQL/MariaDB server in database `srm_portal` utilizing the **InnoDB Storage Engine** for transaction safety (ACID compliance) and referential integrity (foreign keys):
+- **`users`**: Customer/Admin authentication records, verified statuses, and roles. Passwords are secure-hashed using standard **bcrypt** (`password_hash($password, PASSWORD_DEFAULT)`). Raw passwords are never stored.
+- **`suppliers`**: Relational supplier profile metadata linked to user accounts.
+- **`rfqs` & `rfq_items`**: Sourcing events, category divisions, budgets, and specific detailed item requirements.
+- **`bids`**: Supplier bid proposals, commercial prices, lead times, warranties (retained for backward-compatible API queries).
+- **`quotations`, `quotation_items` & `quotation_documents`**: Rich DFD-compliant relational database bid structure containing detailed files and pricing specifications.
+- **`purchase_orders`**: Officially issued agreements linking winning quotations to logistics pipelines.
+- **`goods_receipts`**: Log of goods delivered and accepted at warehouses with support for damage and missing item records.
+- **`invoices`**: Supplier billing records with tax adjustments, linked to purchase orders.
+- **`compliance_documents`**: ISO certificates and W-9 files linked directly to supplier profiles.
+- **`supplier_reviews`**: Performance scorecard evaluation metrics.
+- **`notifications` & `workspace_messages`**: Transaction updates and team collaboration feed messages.
+- **`audit_logs`**: Chronological system activity records mapping back to Process 2.7.
+- **`spend_analytics_snapshots`**: Time-series calculations storing historical financial activity metrics.
 
 ### B. Transient Client-Side Storage (`sessionStorage` and `localStorage`)
 - **`srm_user`**: Active user session details are stored in `sessionStorage` to isolate separate browser tabs completely, enabling independent testing of different supplier accounts.

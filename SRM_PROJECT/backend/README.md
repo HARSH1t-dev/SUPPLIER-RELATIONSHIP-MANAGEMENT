@@ -6,7 +6,7 @@ Simple PHP + MySQL backend for SRM login and registration.
 
 1. Create the database and seed users:
    - Open `backend/database/schema.sql` in phpMyAdmin or the MySQL CLI.
-   - Run the script against MySQL.
+   - Run the script against MySQL (creates RDBMS schema tables with InnoDB constraints and seeding).
 2. Update database credentials if needed:
    - `backend/config/db.php` reads `DB_HOST`, `DB_USER`, `DB_PASS`, and `DB_NAME` from the environment.
    - Defaults are `127.0.0.1`, `root`, empty password, and `srm_portal`.
