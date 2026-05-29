@@ -61,7 +61,7 @@ const nextId = (products) => {
   return `PRD-${Math.max(...nums, 4404) + 1}`;
 };
 
-const CATEGORIES = ["Mechanical", "Packaging", "Electrical", "Logistics", "Chemical", "IT", "Other"];
+const CATEGORIES = ["Mechanical", "Electrical", "Packaging", "Logistics", "Chemical & Raw Materials", "Facilities & Maintenance", "IT & Professional Services"];
 const STATUSES = ["Active", "Review", "Inactive"];
 
 const fmt = (n) =>

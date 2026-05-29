@@ -26,3 +26,11 @@ Simple PHP + MySQL backend for SRM login and registration.
 - `POST /backend/api/register.php`
 - `POST /backend/api/logout.php`
 - `GET /backend/api/me.php`
+- `GET /backend/api/rfqs.php` (List all RFQs)
+- `GET /backend/api/rfqs.php?id={id}` (Fetch single RFQ with line items)
+- `POST /backend/api/rfqs.php` (Create RFQ with items)
+- `DELETE /backend/api/rfqs.php?id={id}` (Delete RFQ)
+- `GET /backend/api/bids.php` (List all supplier quotes with line items)
+- `POST /backend/api/bids.php` (Submit supplier quote & line item rates)
+- `DELETE /backend/api/bids.php?id={id}` (Delete supplier quote)
+

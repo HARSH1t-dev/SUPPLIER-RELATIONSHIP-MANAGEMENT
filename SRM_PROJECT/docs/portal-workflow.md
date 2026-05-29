@@ -50,15 +50,14 @@ The SRM Portal simulates the workflows of a real-world corporate setting:
 
 ### 2. Supplier Bidding
 * **Role**: Supplier (Commercial Lead)
-* **What happens**: Suppliers see the RFQ in their inbox and submit a **Bid Quotation**.
-* **Automation**: The supplier uploads their commercial proposal PDF. The system extracts the bid package reference, quoted price, delivery timeline, and warranty.
-* **Bids Submission Confirmation Screen**: Once the supplier submits a proposal, they see a dynamic success animation panel inside the modal highlighting the exact parameters of their proposal (Target RFQ, Quoted Price, Delivery Time, and Warranty).
-* **Parsing Safety**: The parser searches specifically for the `Total Bid Price:` prefix using word boundary tags (`\btotal\b`). This prevents the system from matching individual unit prices (such as a ball bearing unit cost of `$18.50`) instead of the grand total bid (e.g., `$125,000`).
+* **What happens**: Suppliers see the RFQ in their inbox and submit a detailed, item-by-item **Bid Quotation**.
+* **Spreadsheet Auto-Calculation**: The quotation is rendered as a clean, digital quotation sheet. Suppliers enter the **Unit Price** and **Tax (%)** for each line item. The system automatically computes line totals: `Quantity * Unit Price * (1 + Tax % / 100)`.
+* **Quotation Summary**: The sheet calculates the Subtotal, Tax Total, Freight (user input), and Grand Total Quoted Price automatically. Manual typing of the grand total is disabled to avoid arithmetic mismatch.
 
 ### 3. Bid Evaluation & Contract Award
 * **Role**: Admin (Sourcing Team)
-* **What happens**: The Admin reviews competing bids in the **Bid Comparison Matrix**, scoring them on price, speed, and warranty, then awards a contract to generate a **Purchase Order (PO)**.
-* **Dynamic RFQ Comparison Selector**: Admins can toggle between different RFQs using the dropdown selector in the header to instantly filter bids in the matrix table.
+* **What happens**: The Admin reviews competing bids in the **Bid Comparison Matrix**. The matrix displays both item-by-item unit prices and line totals, plus overall summary parameters (Subtotal, Taxes, Freight, Grand Total) side-by-side.
+* **Dynamic RFQ Comparison Selector**: Admins can toggle between different RFQs using the dropdown selector in the header to instantly filter and rebuild the matrix comparison columns.
 
 ### 4. Goods Receiving & Inspection
 * **Role**: Admin (Warehouse Supervisor)

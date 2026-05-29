@@ -78,7 +78,7 @@ All core records are saved on the XAMPP MySQL/MariaDB server in database `srm_po
 - **`suppliers`**: Relational supplier profile metadata linked to user accounts.
 - **`rfqs` & `rfq_items`**: Sourcing events, category divisions, budgets, and specific detailed item requirements.
 - **`bids`**: Supplier bid proposals, commercial prices, lead times, warranties (retained for backward-compatible API queries).
-- **`quotations`, `quotation_items` & `quotation_documents`**: Rich DFD-compliant relational database bid structure containing detailed files and pricing specifications.
+- **`supplier_quotes`, `supplier_quote_items` & `supplier_quote_documents`**: Rich DFD-compliant relational database bid structure containing detailed files and pricing specifications.
 - **`purchase_orders`**: Officially issued agreements linking winning quotations to logistics pipelines.
 - **`goods_receipts`**: Log of goods delivered and accepted at warehouses with support for damage and missing item records.
 - **`invoices`**: Supplier billing records with tax adjustments, linked to purchase orders.

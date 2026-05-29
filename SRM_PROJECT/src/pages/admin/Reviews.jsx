@@ -5,10 +5,10 @@ import { PageHeader } from '../../components/PageHeader.jsx';
 import { StatusBadge } from '../../components/StatusBadge.jsx';
 
 const supplierScores = [
-  { supplier: 'Apex Industrial Components', category: 'Electronics', quality: 98, delivery: 96, service: 94, compliance: 97, overall: 'Excellent', risk: 'Low' },
+  { supplier: 'Apex Industrial Components', category: 'Electrical', quality: 98, delivery: 96, service: 94, compliance: 97, overall: 'Excellent', risk: 'Low' },
   { supplier: 'Northstar Logistics', category: 'Logistics', quality: 91, delivery: 95, service: 89, compliance: 93, overall: 'Strong', risk: 'Low' },
   { supplier: 'Vector Packaging Co.', category: 'Packaging', quality: 88, delivery: 84, service: 90, compliance: 85, overall: 'Monitor', risk: 'Medium' },
-  { supplier: 'Delta Precision Parts', category: 'Manufacturing', quality: 76, delivery: 78, service: 80, compliance: 74, overall: 'Exception', risk: 'High' },
+  { supplier: 'Delta Precision Parts', category: 'Mechanical', quality: 76, delivery: 78, service: 80, compliance: 74, overall: 'Exception', risk: 'High' },
 ];
 
 const pendingReviews = [

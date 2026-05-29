@@ -14,9 +14,14 @@ import { useMemo, useState, useEffect } from 'react';
 
 const initialForm = {
   title: '',
-  category: 'Manufacturing',
+  category: 'Mechanical',
   deadline: '',
   value: '',
+  description: '',
+  items: [
+    { item_name: 'Steel Rod', specification: 'Grade A', quantity: 100, unit: 'pcs' },
+    { item_name: 'Copper Wire', specification: '2mm', quantity: 20, unit: 'rolls' }
+  ]
 };
 
 function parseValue(value) {
@@ -53,6 +58,28 @@ export function RFQManagement() {
     setForm((current) => ({ ...current, [field]: value }));
   };
 
+  const addItem = () => {
+    setForm((current) => ({
+      ...current,
+      items: [...(current.items || []), { item_name: '', specification: '', quantity: 1, unit: 'pcs' }]
+    }));
+  };
+
+  const updateItem = (index, field, value) => {
+    setForm((current) => {
+      const updatedItems = [...(current.items || [])];
+      updatedItems[index] = { ...updatedItems[index], [field]: value };
+      return { ...current, items: updatedItems };
+    });
+  };
+
+  const removeItem = (index) => {
+    setForm((current) => ({
+      ...current,
+      items: (current.items || []).filter((_, idx) => idx !== index)
+    }));
+  };
+
   const handlePdfUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -70,6 +97,8 @@ export function RFQManagement() {
         category: parsed.category,
         deadline: parsed.deadline,
         value: parsed.value,
+        description: parsed.description || '',
+        items: parsed.items || []
       });
     } catch (err) {
       console.error(err);
@@ -96,6 +125,8 @@ export function RFQManagement() {
       bids: 0,
       value: parseValue(form.value),
       status: 'Active',
+      description: form.description || '',
+      items: form.items || []
     };
 
     setRfqList((current) => {
@@ -243,10 +274,13 @@ export function RFQManagement() {
                 </FormField>
                 <FormField label="Category">
                   <select className={inputClass} value={form.category} onChange={(event) => updateForm('category', event.target.value)}>
-                    <option>Manufacturing</option>
+                    <option>Mechanical</option>
+                    <option>Electrical</option>
+                    <option>Packaging</option>
                     <option>Logistics</option>
-                    <option>Facilities</option>
-                    <option>Services</option>
+                    <option>Chemical & Raw Materials</option>
+                    <option>Facilities & Maintenance</option>
+                    <option>IT & Professional Services</option>
                   </select>
                 </FormField>
                 <FormField label="Deadline">
@@ -260,6 +294,93 @@ export function RFQManagement() {
                     onChange={(event) => updateForm('value', event.target.value)}
                   />
                 </FormField>
+              </div>
+              <div className="mt-4 mb-4">
+                <FormField label="RFQ Description / Scope of Procurement">
+                  <textarea
+                    className={inputClass}
+                    rows={3}
+                    placeholder="Describe technical requirements, quality standards, and terms of delivery..."
+                    value={form.description}
+                    onChange={(event) => updateForm('description', event.target.value)}
+                  />
+                </FormField>
+              </div>
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">RFQ Line Items</h3>
+                  <Button type="button" variant="ghost" className="h-8 text-xs font-semibold py-0" onClick={addItem}>
+                    + Add Item
+                  </Button>
+                </div>
+                <div className="overflow-x-auto max-h-48 border border-slate-200 dark:border-slate-800 rounded-lg">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
+                        <th className="p-2 font-semibold">Item Name</th>
+                        <th className="p-2 font-semibold">Specification</th>
+                        <th className="p-2 font-semibold" style={{ width: '80px' }}>Qty</th>
+                        <th className="p-2 font-semibold" style={{ width: '80px' }}>Unit</th>
+                        <th className="p-2" style={{ width: '50px' }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(form.items || []).length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="p-3 text-center text-slate-400">No items. Click "Add Item" to start.</td>
+                        </tr>
+                      ) : (
+                        (form.items || []).map((item, index) => (
+                          <tr key={index} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
+                            <td className="p-1.5">
+                              <input
+                                className="w-full px-2 py-1 text-xs border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-900 text-slate-950 dark:text-slate-200 outline-none"
+                                value={item.item_name}
+                                onChange={(e) => updateItem(index, 'item_name', e.target.value)}
+                                placeholder="e.g. Steel Rod"
+                                required
+                              />
+                            </td>
+                            <td className="p-1.5">
+                              <input
+                                className="w-full px-2 py-1 text-xs border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-900 text-slate-950 dark:text-slate-200 outline-none"
+                                value={item.specification}
+                                onChange={(e) => updateItem(index, 'specification', e.target.value)}
+                                placeholder="e.g. Grade A"
+                              />
+                            </td>
+                            <td className="p-1.5">
+                              <input
+                                className="w-full px-2 py-1 text-xs border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-900 text-slate-950 dark:text-slate-200 outline-none"
+                                type="number"
+                                min="1"
+                                value={item.quantity}
+                                onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))}
+                              />
+                            </td>
+                            <td className="p-1.5">
+                              <input
+                                className="w-full px-2 py-1 text-xs border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-900 text-slate-950 dark:text-slate-200 outline-none"
+                                value={item.unit}
+                                onChange={(e) => updateItem(index, 'unit', e.target.value)}
+                                placeholder="pcs"
+                              />
+                            </td>
+                            <td className="p-1.5 text-center">
+                              <button
+                                type="button"
+                                onClick={() => removeItem(index)}
+                                className="text-rose-500 hover:text-rose-700 font-bold text-sm"
+                              >
+                                &times;
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
               <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
                 <Button type="button" variant="secondary" onClick={resetAndClose}>

@@ -39,7 +39,7 @@ export const suppliers = [
   {
     id: 'SUP-1001',
     name: 'Apex Industrial Components',
-    category: 'Mechanical Parts',
+    category: 'Mechanical',
     region: 'North America',
     rating: 4.8,
     risk: 'Low',
@@ -72,7 +72,7 @@ export const suppliers = [
     {
       id: 'SUP-1004',
       name: 'Helio Energy Systems',
-      category: 'Energy',
+      category: 'Facilities & Maintenance',
       region: 'Middle East',
     rating: 4.1,
     risk: 'High',
@@ -83,7 +83,7 @@ export const suppliers = [
     {
       id: 'SUP-1005',
       name: 'Summit Precision Tools',
-      category: 'Tooling',
+      category: 'Mechanical',
       region: 'North America',
       rating: 4.7,
       risk: 'Low',
@@ -105,7 +105,7 @@ export const suppliers = [
     {
       id: 'SUP-1007',
       name: 'Greenline Facility Services',
-      category: 'Facilities',
+      category: 'Facilities & Maintenance',
       region: 'Europe',
       rating: 4.2,
       risk: 'Medium',
@@ -127,7 +127,7 @@ export const suppliers = [
     {
       id: 'SUP-1009',
       name: 'Prime Polymer Works',
-      category: 'Raw Materials',
+      category: 'Chemical & Raw Materials',
       region: 'APAC',
       rating: 4.0,
       risk: 'High',
@@ -138,7 +138,7 @@ export const suppliers = [
     {
       id: 'SUP-1010',
       name: 'Cobalt Safety Systems',
-      category: 'Safety',
+      category: 'Facilities & Maintenance',
       region: 'Europe',
       rating: 4.6,
       risk: 'Low',
@@ -149,7 +149,7 @@ export const suppliers = [
     {
       id: 'SUP-1011',
       name: 'Orion Maintenance Group',
-      category: 'Services',
+      category: 'IT & Professional Services',
       region: 'Middle East',
       rating: 4.1,
       risk: 'Medium',
@@ -171,7 +171,7 @@ export const suppliers = [
     {
       id: 'SUP-1013',
       name: 'Atlas Industrial Pumps',
-      category: 'Mechanical Parts',
+      category: 'Mechanical',
       region: 'North America',
       rating: 4.2,
       risk: 'Medium',
@@ -182,7 +182,7 @@ export const suppliers = [
     {
       id: 'SUP-1014',
       name: 'Nova Cleanroom Supply',
-      category: 'Facilities',
+      category: 'Facilities & Maintenance',
       region: 'Europe',
       rating: 4.7,
       risk: 'Low',
@@ -204,7 +204,7 @@ export const suppliers = [
     {
       id: 'SUP-1016',
       name: 'Vertex Energy Controls',
-      category: 'Energy',
+      category: 'Facilities & Maintenance',
       region: 'Middle East',
       rating: 4.4,
       risk: 'Low',
@@ -222,10 +222,10 @@ export const products = [
 ];
 
 export const rfqs = [
-  { id: 'RFQ-24061', title: 'Precision CNC Aluminum Housings', category: 'Manufacturing', deadline: '2026-06-05', bids: 9, status: 'Open', value: 740000 },
+  { id: 'RFQ-24061', title: 'Precision CNC Aluminum Housings', category: 'Mechanical', deadline: '2026-06-05', bids: 9, status: 'Open', value: 740000 },
   { id: 'RFQ-24062', title: 'Multi-region Freight Forwarding', category: 'Logistics', deadline: '2026-06-12', bids: 6, status: 'Evaluating', value: 1280000 },
-  { id: 'RFQ-24063', title: 'Cleanroom Consumables Supply', category: 'Facilities', deadline: '2026-06-18', bids: 3, status: 'Draft', value: 420000 },
-  { id: 'RFQ-24064', title: 'Solar Inverter Maintenance', category: 'Services', deadline: '2026-05-30', bids: 11, status: 'Open', value: 360000 },
+  { id: 'RFQ-24063', title: 'Cleanroom Consumables Supply', category: 'Facilities & Maintenance', deadline: '2026-06-18', bids: 3, status: 'Draft', value: 420000 },
+  { id: 'RFQ-24064', title: 'Solar Inverter Maintenance', category: 'Facilities & Maintenance', deadline: '2026-05-30', bids: 11, status: 'Open', value: 360000 },
 ];
 
 export const bids = [

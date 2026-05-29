@@ -95,11 +95,12 @@ CREATE TABLE IF NOT EXISTS rfqs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS rfq_items (
-  rfq_item_id INT AUTO_INCREMENT PRIMARY KEY,
+  id INT AUTO_INCREMENT PRIMARY KEY,
   rfq_id VARCHAR(50) NOT NULL,
-  product_name VARCHAR(150) NOT NULL,
+  item_name VARCHAR(150) NOT NULL,
+  specification TEXT DEFAULT NULL,
   quantity INT NOT NULL,
-  specifications TEXT DEFAULT NULL,
+  unit VARCHAR(50) NOT NULL,
   FOREIGN KEY (rfq_id) REFERENCES rfqs(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -121,41 +122,49 @@ CREATE TABLE IF NOT EXISTS bids (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS quotations (
-  quotation_id INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS supplier_quotes (
+  id VARCHAR(50) PRIMARY KEY,
   rfq_id VARCHAR(50) NOT NULL,
-  supplier_id INT NOT NULL,
-  total_amount DECIMAL(12,2) DEFAULT NULL,
-  delivery_days INT DEFAULT NULL,
-  remarks TEXT DEFAULT NULL,
+  supplier_id INT UNSIGNED NOT NULL,
+  supplier_name VARCHAR(120) DEFAULT NULL,
+  subtotal DECIMAL(15, 2) NOT NULL,
+  tax_total DECIMAL(15, 2) NOT NULL,
+  freight DECIMAL(15, 2) NOT NULL,
+  grand_total DECIMAL(15, 2) NOT NULL,
+  delivery VARCHAR(100) DEFAULT NULL,
+  warranty VARCHAR(100) DEFAULT NULL,
+  score INT UNSIGNED DEFAULT 85,
+  best INT DEFAULT 0,
   submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  status ENUM('submitted', 'selected', 'rejected') DEFAULT 'submitted',
   FOREIGN KEY (rfq_id) REFERENCES rfqs(id) ON DELETE CASCADE,
-  FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id) ON DELETE CASCADE
+  FOREIGN KEY (supplier_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS quotation_items (
-  quotation_item_id INT AUTO_INCREMENT PRIMARY KEY,
-  quotation_id INT NOT NULL,
+CREATE TABLE IF NOT EXISTS supplier_quote_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  supplier_quote_id VARCHAR(50) NOT NULL,
   rfq_item_id INT NOT NULL,
-  quoted_price DECIMAL(10,2) NOT NULL,
+  unit_price DECIMAL(15, 2) NOT NULL,
   quantity INT NOT NULL,
-  FOREIGN KEY (quotation_id) REFERENCES quotations(quotation_id) ON DELETE CASCADE,
-  FOREIGN KEY (rfq_item_id) REFERENCES rfq_items(rfq_item_id) ON DELETE CASCADE
+  tax_percent DECIMAL(5, 2) DEFAULT 0.00,
+  line_total DECIMAL(15, 2) NOT NULL,
+  remarks TEXT DEFAULT NULL,
+  FOREIGN KEY (supplier_quote_id) REFERENCES supplier_quotes(id) ON DELETE CASCADE,
+  FOREIGN KEY (rfq_item_id) REFERENCES rfq_items(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS quotation_documents (
+CREATE TABLE IF NOT EXISTS supplier_quote_documents (
   document_id INT AUTO_INCREMENT PRIMARY KEY,
-  quotation_id INT NOT NULL,
-  supplier_id INT NOT NULL,
+  supplier_quote_id VARCHAR(50) NOT NULL,
+  supplier_id INT UNSIGNED NOT NULL,
   original_file_name VARCHAR(255) NOT NULL,
   stored_file_name VARCHAR(255) NOT NULL,
   file_path VARCHAR(500) NOT NULL,
   file_size BIGINT DEFAULT NULL,
   mime_type VARCHAR(100) DEFAULT NULL,
   uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (quotation_id) REFERENCES quotations(quotation_id) ON DELETE CASCADE,
-  FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id) ON DELETE CASCADE
+  FOREIGN KEY (supplier_quote_id) REFERENCES supplier_quotes(id) ON DELETE CASCADE,
+  FOREIGN KEY (supplier_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =========================================================
@@ -163,13 +172,13 @@ CREATE TABLE IF NOT EXISTS quotation_documents (
 -- =========================================================
 CREATE TABLE IF NOT EXISTS purchase_orders (
   po_id INT AUTO_INCREMENT PRIMARY KEY,
-  quotation_id INT DEFAULT NULL,
+  supplier_quote_id VARCHAR(50) DEFAULT NULL,
   po_number VARCHAR(100) UNIQUE NOT NULL,
   issued_by INT UNSIGNED NOT NULL,
   issued_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   expected_delivery DATE DEFAULT NULL,
   status ENUM('issued', 'shipped', 'delivered', 'cancelled') DEFAULT 'issued',
-  FOREIGN KEY (quotation_id) REFERENCES quotations(quotation_id) ON DELETE SET NULL,
+  FOREIGN KEY (supplier_quote_id) REFERENCES supplier_quotes(id) ON DELETE SET NULL,
   FOREIGN KEY (issued_by) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -283,7 +292,7 @@ CREATE INDEX idx_user_email ON users(email);
 CREATE INDEX idx_supplier_company ON suppliers(company_name);
 CREATE INDEX idx_product_supplier ON products(supplier_id);
 CREATE INDEX idx_rfq_deadline ON rfqs(deadline);
-CREATE INDEX idx_quotation_supplier ON quotations(supplier_id);
+CREATE INDEX idx_quote_supplier ON supplier_quotes(supplier_id);
 CREATE INDEX idx_po_number ON purchase_orders(po_number);
 CREATE INDEX idx_invoice_number ON invoices(invoice_number);
 CREATE INDEX idx_audit_action ON audit_logs(action);
@@ -308,9 +317,18 @@ ON DUPLICATE KEY UPDATE company_name = VALUES(company_name);
 -- Seed Initial RFQs
 INSERT INTO rfqs (id, title, category, deadline, bids, value, status)
 VALUES
-  ('RFQ-24061', 'Industrial Ball Bearings Sourcing', 'Manufacturing', '2026-06-30', 3, 120000.00, 'Under Evaluation'),
-  ('RFQ-24062', 'Warehouse Rack Installation', 'Facilities', '2026-07-15', 2, 45000.00, 'Open'),
-  ('RFQ-24063', 'High-grade Silicon Wafers', 'Manufacturing', '2026-08-01', 0, 320000.00, 'Draft')
+  ('RFQ-24061', 'Industrial Ball Bearings Sourcing', 'Mechanical', '2026-06-30', 3, 120000.00, 'Under Evaluation'),
+  ('RFQ-24062', 'Warehouse Rack Installation', 'Facilities & Maintenance', '2026-07-15', 2, 45000.00, 'Open'),
+  ('RFQ-24063', 'High-grade Silicon Wafers', 'Chemical & Raw Materials', '2026-08-01', 0, 320000.00, 'Draft')
+ON DUPLICATE KEY UPDATE id = VALUES(id);
+
+-- Seed Initial RFQ Items
+INSERT INTO rfq_items (id, rfq_id, item_name, specification, quantity, unit)
+VALUES
+  (1, 'RFQ-24061', 'Steel Bearings SB-100', 'Grade A Double Sealed, Heavy Duty', 1000, 'pcs'),
+  (2, 'RFQ-24061', 'Brass Bushings BB-50', 'Heavy duty self-lubricating sleeve', 500, 'pcs'),
+  (3, 'RFQ-24062', 'Heavy Duty Steel Racks', '4-Tier Industrial Shelving units', 20, 'units'),
+  (4, 'RFQ-24063', 'Silicon Wafers 300mm', 'Ultra-pure Prime grade 100-type', 150, 'units')
 ON DUPLICATE KEY UPDATE id = VALUES(id);
 
 -- Seed Initial Bids
@@ -319,6 +337,25 @@ VALUES
   ('BID-1', 'RFQ-24061', 115000.00, '10 Days', '3 Years', 92, 1, 2, 'Apex Industrial Components'),
   ('BID-2', 'RFQ-24061', 125000.00, '15 Days', '2 Years', 88, 0, 2, 'Apex Industrial Components'),
   ('BID-3', 'RFQ-24061', 110000.00, '20 Days', '1 Year', 81, 0, 2, 'Apex Industrial Components')
+ON DUPLICATE KEY UPDATE id = VALUES(id);
+
+-- Seed Initial Supplier Quotes
+INSERT INTO supplier_quotes (id, rfq_id, supplier_id, supplier_name, subtotal, tax_total, freight, grand_total, delivery, warranty, score, best)
+VALUES
+  ('BID-1', 'RFQ-24061', 2, 'Apex Industrial Components', 97000.00, 17460.00, 540.00, 115000.00, '10 Days', '3 Years', 92, 1),
+  ('BID-2', 'RFQ-24061', 2, 'Apex Industrial Components', 105000.00, 18900.00, 1100.00, 125000.00, '15 Days', '2 Years', 88, 0),
+  ('BID-3', 'RFQ-24061', 2, 'Apex Industrial Components', 92500.00, 16650.00, 850.00, 110000.00, '20 Days', '1 Year', 81, 0)
+ON DUPLICATE KEY UPDATE id = VALUES(id);
+
+-- Seed Initial Supplier Quote Items
+INSERT INTO supplier_quote_items (id, supplier_quote_id, rfq_item_id, unit_price, quantity, tax_percent, line_total, remarks)
+VALUES
+  (1, 'BID-1', 1, 75.00, 1000, 18.00, 88500.00, 'Standard grade'),
+  (2, 'BID-1', 2, 44.00, 500, 18.00, 25960.00, 'Premium bushing'),
+  (3, 'BID-2', 1, 80.00, 1000, 18.00, 94400.00, 'Reinforced seal'),
+  (4, 'BID-2', 2, 50.00, 500, 18.00, 29500.00, 'Custom finish'),
+  (5, 'BID-3', 1, 70.00, 1000, 18.00, 82600.00, 'Budget bearings'),
+  (6, 'BID-3', 2, 45.00, 500, 18.00, 26550.00, 'Standard bushing')
 ON DUPLICATE KEY UPDATE id = VALUES(id);
 
 -- Seed Initial Goods Receipts

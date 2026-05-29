@@ -5,14 +5,56 @@ import { PageHeader } from '../../components/PageHeader.jsx';
 import { StatusBadge } from '../../components/StatusBadge.jsx';
 import { currency } from '../../utils/formatters.js';
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export function BidComparison() {
+  const navigate = useNavigate();
   const [rfqList, setRfqList] = useState([]);
   const [selectedRfqId, setSelectedRfqId] = useState('RFQ-24061');
   const [allBids, setAllBids] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRfqDetails, setSelectedRfqDetails] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [awardingBid, setAwardingBid] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1/SUPPLIER-RELATIONSHIP-MANAGEMENT/SRM_PROJECT/backend/api').replace(/\/$/, '');
+
+  const handleConfirmAward = () => {
+    if (!awardingBid) return;
+    setIsSubmitting(true);
+
+    const stored = sessionStorage.getItem('srm_user');
+    const currentUser = stored ? JSON.parse(stored) : { id: 1 };
+
+    fetch(`${apiBaseUrl}/award_contract.php`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        proposal_id: awardingBid.id,
+        awarded_by: currentUser.id,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          alert('Contract successfully awarded! Legally binding PO has been issued.');
+          setShowConfirmModal(false);
+          navigate('/admin/orders');
+        } else {
+          alert('Failed to award contract: ' + data.message);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        alert('An error occurred while awarding contract.');
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
+  };
 
   useEffect(() => {
     // 1. Fetch RFQs
@@ -22,7 +64,6 @@ export function BidComparison() {
         if (data.success && Array.isArray(data.rfqs)) {
           setRfqList(data.rfqs);
           if (data.rfqs.length > 0) {
-            // Default to the first active RFQ or first in list
             const activeRfq = data.rfqs.find(r => r.status === 'Active' || r.status === 'Under Evaluation');
             setSelectedRfqId(activeRfq ? activeRfq.id : data.rfqs[0].id);
           }
@@ -41,6 +82,19 @@ export function BidComparison() {
       .catch((err) => console.error('Failed to fetch Bids:', err))
       .finally(() => setLoading(false));
   }, [apiBaseUrl]);
+
+  useEffect(() => {
+    if (selectedRfqId) {
+      fetch(`${apiBaseUrl}/rfqs.php?id=${selectedRfqId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.rfq) {
+            setSelectedRfqDetails(data.rfq);
+          }
+        })
+        .catch((err) => console.error('Failed to fetch RFQ details:', err));
+    }
+  }, [selectedRfqId, apiBaseUrl]);
 
   const selectedRfq = useMemo(() => {
     return rfqList.find(r => r.id === selectedRfqId);
@@ -74,6 +128,104 @@ export function BidComparison() {
         };
       });
   }, [allBids, selectedRfqId]);
+
+  const comparisonColumns = useMemo(() => {
+    const cols = [
+      {
+        key: 'supplier',
+        header: 'Supplier',
+        render: (row) => (
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-950 dark:text-slate-200">{row.supplier}</span>
+            {row.best ? <StatusBadge status="Approved" /> : null}
+          </div>
+        ),
+      }
+    ];
+
+    if (selectedRfqDetails && Array.isArray(selectedRfqDetails.items)) {
+      selectedRfqDetails.items.forEach((item) => {
+        cols.push({
+          key: `item_${item.id}`,
+          header: `${item.item_name} (₹)`,
+          render: (row) => {
+            const quoteItem = (row.items || []).find((qi) => qi.rfq_item_id === item.id);
+            if (quoteItem) {
+              return (
+                <div className="text-xs">
+                  <div className="font-semibold">{currency(quoteItem.unit_price)}</div>
+                  <div className="text-[10px] text-slate-400">Total: {currency(quoteItem.line_total)}</div>
+                </div>
+              );
+            }
+            return <span className="text-slate-400">-</span>;
+          }
+        });
+      });
+    }
+
+    cols.push(
+      { key: 'subtotal', header: 'Subtotal', render: (row) => currency(row.subtotal || row.price) },
+      { key: 'tax_total', header: 'Taxes', render: (row) => currency(row.tax_total || 0) },
+      { key: 'freight', header: 'Freight', render: (row) => currency(row.freight || 0) },
+      {
+        key: 'grand_total',
+        header: 'Grand Total',
+        render: (row) => (
+          <span className="font-bold text-brand-600 dark:text-brand-400">
+            {currency(row.grand_total || row.price)}
+          </span>
+        ),
+      },
+      { key: 'delivery', header: 'Delivery' },
+      { key: 'rating', header: 'Rating', render: (row) => <span>{row.rating} / 5.0</span> },
+      { key: 'warranty', header: 'Warranty' },
+      {
+        key: 'score',
+        header: 'Score',
+        render: (row) => (
+          <div className="flex items-center gap-2">
+            {row.best ? <Award className="h-4 w-4 text-amber-500" /> : null}
+            <span className={row.best ? 'font-bold text-brand-700 dark:text-brand-400' : 'font-semibold text-slate-700 dark:text-slate-400'}>{row.score}</span>
+          </div>
+        ),
+      }
+    );
+
+    if (selectedRfq && selectedRfq.status !== 'Awarded') {
+      cols.push({
+        key: 'actions',
+        header: 'Action',
+        render: (row) => (
+          <button
+            onClick={() => {
+              setAwardingBid(row);
+              setShowConfirmModal(true);
+            }}
+            className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-brand-700 transition shadow-sm"
+          >
+            <Award className="h-3.5 w-3.5" /> Award
+          </button>
+        ),
+      });
+    } else if (selectedRfq && selectedRfq.status === 'Awarded') {
+      cols.push({
+        key: 'actions',
+        header: 'Action',
+        render: (row) => (
+          row.status === 'awarded' || row.best ? (
+            <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              Winner
+            </span>
+          ) : (
+            <span className="text-xs text-slate-400 font-semibold">Rejected</span>
+          )
+        ),
+      });
+    }
+
+    return cols;
+  }, [selectedRfqDetails, selectedRfq]);
 
   if (loading) {
     return (
@@ -115,34 +267,90 @@ export function BidComparison() {
         <DataTable
           data={filteredBids}
           empty="No supplier quotations have been submitted yet for this RFQ."
-          columns={[
-            {
-              key: 'supplier',
-              header: 'Supplier',
-              render: (row) => (
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-slate-950 dark:text-slate-200">{row.supplier}</span>
-                  {row.best ? <StatusBadge status="Approved" /> : null}
-                </div>
-              ),
-            },
-            { key: 'price', header: 'Price Comparison', render: (row) => currency(row.price) },
-            { key: 'delivery', header: 'Delivery Timeline' },
-            { key: 'rating', header: 'Supplier Rating', render: (row) => <span className="dark:text-slate-300">{row.rating} / 5.0</span> },
-            { key: 'warranty', header: 'Warranty' },
-            {
-              key: 'score',
-              header: 'Score',
-              render: (row) => (
-                <div className="flex items-center gap-2">
-                  {row.best ? <Award className="h-4 w-4 text-amber-500" /> : null}
-                  <span className={row.best ? 'font-bold text-brand-700 dark:text-brand-400' : 'font-semibold text-slate-700 dark:text-slate-400'}>{row.score}</span>
-                </div>
-              ),
-            },
-          ]}
+          columns={comparisonColumns}
         />
       </Card>
+
+      {showConfirmModal && awardingBid && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-2xl rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-900 pb-4">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400">
+                <Award className="h-5 w-5" />
+              </span>
+              <div>
+                <h3 className="text-lg font-bold text-slate-950 dark:text-slate-50">Award Procurement Contract</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Confirm purchase order generation for sourcing event {selectedRfqId}</p>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4 rounded-lg bg-slate-50 dark:bg-slate-900/50 p-4 text-sm">
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block">SELECTED WINNER</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">{awardingBid.supplier}</span>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block">TOTAL QUOTED VALUE</span>
+                  <span className="font-bold text-brand-600 dark:text-brand-400">{currency(awardingBid.grand_total || awardingBid.price)}</span>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block">DELIVERY SCHEDULE</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">{awardingBid.delivery}</span>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block">WARRANTY TERMS</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">{awardingBid.warranty}</span>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block mb-1">CONTRACT LEGAL TERMS & CONDITIONS</span>
+                <div className="h-44 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3 text-[10px] leading-5 font-mono text-slate-600 dark:text-slate-300">
+                  {`PURCHASE ORDER AGREEMENT — TATA MOTORS LTD
+
+PO Number      : PO-${new Date().getFullYear()}-XXXX
+Issued Date    : ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+Supplier       : ${awardingBid.supplier}
+Order Date     : ${new Date().toISOString().split('T')[0]}
+Delivery By    : (Quoted Lead Time: ${awardingBid.delivery})
+Total Value    : INR ${Number(awardingBid.grand_total || awardingBid.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+
+TERMS & CONDITIONS:
+1. This Purchase Order constitutes a legally binding procurement contract issued by Tata Motors Ltd.
+2. The Supplier agrees to deliver all items specified herein in full, on or before the delivery date.
+3. Payment Terms: Net 30 days upon delivery and submission of a valid GST tax invoice.
+4. Any deviation in quantity, specifications, or delivery schedule requires prior written approval.
+5. Goods not conforming to specifications will be rejected at the Supplier's expense.
+6. Tata Motors reserves the right to cancel this PO with written notice of 7 business days.
+7. Governing Law: Laws of India. Jurisdiction: Jharkhand High Court.
+
+This Purchase Order is issued electronically and is legally valid without physical signature.`}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-900 pt-4">
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition"
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmAward}
+                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700 transition flex items-center gap-1.5"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Awarding...' : 'Confirm & Issue PO'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

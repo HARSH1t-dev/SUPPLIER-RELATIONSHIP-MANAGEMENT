@@ -71,7 +71,9 @@ Follow these steps sequentially to test the full Procurement Lifecycle.
      * *Category*: `Logistics` (matched via text keywords)
      * *Deadline*: `2026-08-30` (matched via date regex)
      * *Target value*: `450000` (matched via estimated budget regex)
-  8. Click **Save RFQ** to write the record to the database table `rfqs` with status `Active`.
+     * *Line Items*: Verify the line items editor table is pre-populated (e.g. with default items "Steel Rod" and "Copper Wire").
+  8. **Line Items Grid Editor**: Click **+ Add Item** to append custom line items, or edit the existing names, specifications, quantities, and units.
+  9. Click **Save RFQ** to write the record and its associated line items to the database with status `Active`.
 
 ---
 
@@ -80,11 +82,9 @@ Follow these steps sequentially to test the full Procurement Lifecycle.
 * **Actions**:
   1. Toggle role in the top header or log in as **Supplier**.
   2. Navigate to **RFQ Inbox** in the sidebar.
-  3. Verify that the published RFQ `RFQ-2026-LOGISTICS` is visible.
+  3. Verify that the published RFQ is visible.
   4. **Click the "Bid" Action Button** next to the RFQ:
-     * Verify that it automatically routes you to the **My Bids** quotation page.
-     * Verify that the **Submit Bid Quotation** modal opens automatically.
-     * Verify that the **Target RFQ Package** field in the form is pre-filled with the RFQ ID (e.g. `RFQ-2026-LOGISTICS`).
+     * Verify that it automatically routes you to the **My Bids** page and opens the quotation modal with the RFQ reference pre-filled.
 
 ---
 
@@ -92,16 +92,16 @@ Follow these steps sequentially to test the full Procurement Lifecycle.
 * **DFD Process**: 3.3 Bidding System | **Actor**: Supplier (Commercial Lead)
 * **Actions**:
   1. With the pre-filled modal already open from Step 3:
-  2. Click **Download Sample Bid Quotation** to get the sample PDF.
-  3. Click **Choose PDF File** in the upload card and upload `bid-quotation.pdf`.
-  4. **Parser Verification**: Verify the parser extracts the grand totals, ignoring line items:
-     * *Target RFQ Package*: `RFQ-24061` (Update manually to match your target RFQ ID if needed)
-     * *Quoted Price ($)*: `125000` (Verified: It correctly extracts the grand total `$125,000` and ignores the first line unit price `$18.50` due to strict regex word boundary `\btotal\b` matching).
-     * *Delivery Lead Time*: `12 days`
-     * *Warranty Period*: `3 years`
-  5. Click **Submit Proposal**:
-     * **Success Animation Screen**: Verify the modal does not close instantly. It transitions dynamically to an emerald success screen showing a dynamic checkmark bounce animation, a confirmation message, and a summarized cards view of your submitted details.
-     * **Verification**: Click **Done** to close the modal. Verify that the table updates with the new bid quotation.
+  2. **Relational Items Loading**: Verify that the **Quotation Sheet** table dynamically loads the line items requested in the buyer's RFQ.
+  3. For each line item, enter the **Unit Price** (e.g. `50` for Steel Rod, `200` for Copper Wire) and adjust the **Tax (%)** (defaults to `18.0%`).
+  4. Verify that the **Line Total** for each item auto-calculates dynamically (e.g., Qty 100 * ₹50 * 1.18 = ₹5,900).
+  5. Enter the **Freight (₹)** charge in the summary panel (e.g., `200`).
+  6. **Auto-Calculations Verification**: Confirm that the sheet summary panel automatically displays:
+     * *Subtotal*: Sum of item quantities * unit prices (e.g., ₹9,000)
+     * *Taxes*: Sum of item taxes (e.g., ₹1,620)
+     * *Grand Total Quoted Price*: Subtotal + Taxes + Freight (e.g., ₹10,820)
+  7. Fill in **Delivery Lead Time** (e.g., `10 Days`) and **Warranty Period** (e.g., `3 Years`).
+  8. Click **Submit Proposal** to save the quote headers and line-item details. The modal will close instantly.
 
 ---
 
@@ -110,8 +110,11 @@ Follow these steps sequentially to test the full Procurement Lifecycle.
 * **Actions**:
   1. Switch back to the **Admin Console**.
   2. Navigate to **Bid Management** in the sidebar.
-  3. **Live Scope Selector**: Use the **RFQ Scope** dropdown selector at the top right to compare proposals across all active or past sourcing events.
-  4. Verify that the comparison matrix and best-proposal award highlights recalculate instantly based on matching bids in the database.
+  3. **Live Scope Selector**: Use the **RFQ Scope** dropdown selector at the top right to select the RFQ.
+  4. **Line-Item Comparison Verification**: Confirm that the comparison table displays a dynamic matrix showing:
+     * **Per-Item Unit Prices**: Unit price and total line cost of each supplier compared side-by-side for each specific RFQ item.
+     * **Quotation Summary**: Mapped columns showing Subtotal, Tax Total, Freight, and Grand Total side-by-side.
+     * **Scores & Ratings**: Performance ratings and weighted evaluation scores.
 
 ---
 

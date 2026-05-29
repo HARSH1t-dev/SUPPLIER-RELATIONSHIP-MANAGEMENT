@@ -196,8 +196,9 @@ flowchart TD
 | `value` | `/(?:estimated\s+value|\bvalue\b)\s*:?\s*(\$[0-9,]+(\.[0-9]{2})?|\d+,\d{3})/i` | `'250000'` |
 | `deadline` | `/\d{4}-\d{2}-\d{2}/` or `/\d{2}\/\d{2}\/\d{4}/` | `'2026-08-30'` |
 | `category` | Keyword search: `logistics`→Logistics, `facility/hvac`→Facilities, `service/consulting`→Services | `'Manufacturing'` |
+| `items` | Table schedule regex: `\b(\d+)\s+([A-Za-z0-9\s\(\)#\.&-]+?)\s+(\d{1,4})\s+([A-Za-z0-9/]+)\s+\$([0-9,]+)` | Parses item list from schedule table |
 
-**Returns**: `{ title, category, deadline, value }`
+**Returns**: `{ title, category, deadline, value, items }`
 
 ---
 
