@@ -1,0 +1,11 @@
+{
+  "name": "srm-backend",
+  "version": "2.0.0",
+  "private": true,
+  "description": "SRM RFQ API — PHP + MySQL",
+  "scripts": {
+    "setup": "powershell -ExecutionPolicy Bypass -File ./setup.ps1",
+    "dev": "powershell -ExecutionPolicy Bypass -File ./start.ps1",
+    "start": "powershell -ExecutionPolicy Bypass -File ./start.ps1"
+  }
+}
