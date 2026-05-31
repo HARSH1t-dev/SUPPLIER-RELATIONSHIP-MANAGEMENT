@@ -8,12 +8,14 @@ import { RegisterPage } from '../pages/auth/RegisterPage.jsx';
 import { ForgotPassword } from '../pages/auth/ForgotPassword.jsx';
 import { AdminDashboard } from '../pages/admin/Dashboard.jsx';
 import { SupplierManagement } from '../pages/admin/SupplierManagement.jsx';
+import { SupplierDetail } from '../pages/admin/SupplierDetail.jsx';
 import { ProductManagement } from '../pages/admin/ProductManagement.jsx';
 import { RFQManagement } from '../pages/admin/RFQManagement.jsx';
 import { RFQDetail } from '../pages/admin/RFQDetail.jsx';
 import { BidComparison } from '../pages/admin/BidComparison.jsx';
 import { PurchaseOrders } from '../pages/admin/PurchaseOrders.jsx';
 import { OrderTracker } from '../pages/admin/OrderTracker.jsx';
+import { OrderTrackerDetail } from '../pages/admin/OrderTrackerDetail.jsx';
 import { GoodsReceiving } from '../pages/admin/GoodsReceiving.jsx';
 import { Reviews } from '../pages/admin/Reviews.jsx';
 import { Analytics } from '../pages/admin/Analytics.jsx';
@@ -59,6 +61,7 @@ export const appRoutes = [
     children: [
       { index: true, element: <AdminDashboard /> },
       { path: 'suppliers', element: <SupplierManagement /> },
+      { path: 'suppliers/:supplierId', element: <SupplierDetail /> },
       { path: 'supplier-rankings', element: <SupplierRankings /> },
       { path: 'products', element: <ProductManagement /> },
       { path: 'rfqs', element: <RFQManagement /> },
@@ -67,6 +70,7 @@ export const appRoutes = [
       { path: 'bids/negotiate/:bidId', element: <NegotiationRoom /> },
       { path: 'orders', element: <PurchaseOrders /> },
       { path: 'order-tracker', element: <OrderTracker /> },
+      { path: 'order-tracker/:id', element: <OrderTrackerDetail /> },
       { path: 'receiving', element: <GoodsReceiving /> },
       { path: 'receipts-reviews', element: <GoodsReceiving /> },
       { path: 'reviews', element: <Reviews /> },

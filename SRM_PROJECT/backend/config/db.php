@@ -35,3 +35,25 @@ function db_connection(): mysqli
     $connection->set_charset('utf8mb4');
     return $connection;
 }
+
+function db_try_connection(): ?mysqli
+{
+    try {
+        $config = db_config();
+        mysqli_report(MYSQLI_REPORT_OFF);
+        $connection = @new mysqli(
+            $config['host'],
+            $config['user'],
+            $config['pass'],
+            $config['name']
+        );
+        if ($connection->connect_error) {
+            return null;
+        }
+        $connection->set_charset('utf8mb4');
+        return $connection;
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+

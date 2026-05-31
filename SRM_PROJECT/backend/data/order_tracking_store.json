@@ -1,0 +1,110 @@
+{
+  "demo_mode": true,
+  "orders": [
+    {
+      "id": 1,
+      "po_id": 1,
+      "po_number": "PO-88021",
+      "supplier_id": 2,
+      "supplier_name": "Apex Industrial Components",
+      "supplier_email": "supplier@srm.local",
+      "rfq_number": "RFQ-24061",
+      "rfq_title": "Industrial Ball Bearings Sourcing",
+      "total_amount": 115000,
+      "order_date": "2026-05-18 09:00:00",
+      "delivery_date": "2026-06-15",
+      "status": "shipped",
+      "tracking_status": "IN_TRANSIT",
+      "tracking_number": "TRK-DHL-90821",
+      "progress_percent": 75,
+      "latest_checkpoint": "Shipment departed regional hub — in transit to plant"
+    },
+    {
+      "id": 2,
+      "po_id": 2,
+      "po_number": "PO-88022",
+      "supplier_id": 4,
+      "supplier_name": "BluePeak Electronics",
+      "supplier_email": "supplier.b@srm.local",
+      "rfq_number": "RFQ-24064",
+      "rfq_title": "Laptop Procurement",
+      "total_amount": 48500,
+      "order_date": "2026-05-22 11:30:00",
+      "delivery_date": "2026-06-28",
+      "status": "pending",
+      "tracking_status": "PACKED",
+      "tracking_number": "TRK-FDX-88022",
+      "progress_percent": 45,
+      "latest_checkpoint": "Order packed and awaiting carrier pickup"
+    },
+    {
+      "id": 3,
+      "po_id": 3,
+      "po_number": "PO-88023",
+      "supplier_id": 6,
+      "supplier_name": "PrimeByte Hardware",
+      "supplier_email": "supplier.d@srm.local",
+      "rfq_number": "RFQ-24064",
+      "rfq_title": "Laptop Procurement",
+      "total_amount": 46000,
+      "order_date": "2026-05-25 08:15:00",
+      "delivery_date": "2026-06-20",
+      "status": "issued",
+      "tracking_status": "PO_CREATED",
+      "tracking_number": null,
+      "progress_percent": 10,
+      "latest_checkpoint": "Purchase order issued — awaiting supplier acceptance"
+    },
+    {
+      "id": 4,
+      "po_id": 4,
+      "po_number": "PO-88024",
+      "supplier_id": 3,
+      "supplier_name": "TechNova Systems",
+      "supplier_email": "supplier.a@srm.local",
+      "rfq_number": "RFQ-24062",
+      "rfq_title": "Warehouse Rack Installation",
+      "total_amount": 45000,
+      "order_date": "2026-05-10 14:00:00",
+      "delivery_date": "2026-05-30",
+      "status": "fulfilled",
+      "tracking_status": "PAYMENT_COMPLETED",
+      "tracking_number": "TRK-TN-88024",
+      "progress_percent": 100,
+      "latest_checkpoint": "Payment completed — order closed"
+    }
+  ],
+  "events": {
+    "1": [
+      { "id": 1, "po_id": 1, "status": "PO_CREATED", "description": "Purchase order PO-88021 created and issued.", "updated_by": 1, "updated_by_name": "Admin User", "created_at": "2026-05-18 09:00:00" },
+      { "id": 2, "po_id": 1, "status": "SUPPLIER_ACCEPTED", "description": "Supplier accepted PO and confirmed delivery window.", "updated_by": 2, "updated_by_name": "Supplier User", "created_at": "2026-05-19 10:20:00" },
+      { "id": 3, "po_id": 1, "status": "PRODUCTION_STARTED", "description": "Manufacturing started for bearing line items.", "updated_by": 2, "updated_by_name": "Supplier User", "created_at": "2026-05-21 08:00:00" },
+      { "id": 4, "po_id": 1, "status": "PACKED", "description": "All items packed for dispatch.", "updated_by": 2, "updated_by_name": "Supplier User", "created_at": "2026-05-24 16:30:00" },
+      { "id": 5, "po_id": 1, "status": "DISPATCHED", "description": "Handed to DHL Freight.", "updated_by": 2, "updated_by_name": "Supplier User", "created_at": "2026-05-25 09:15:00" },
+      { "id": 6, "po_id": 1, "status": "IN_TRANSIT", "description": "Shipment in transit to receiving plant.", "updated_by": 2, "updated_by_name": "Supplier User", "created_at": "2026-05-27 07:45:00" }
+    ],
+    "2": [
+      { "id": 7, "po_id": 2, "status": "PO_CREATED", "description": "PO-88022 issued after contract award.", "updated_by": 1, "updated_by_name": "Admin User", "created_at": "2026-05-22 11:30:00" },
+      { "id": 8, "po_id": 2, "status": "SUPPLIER_ACCEPTED", "description": "BluePeak confirmed PO.", "updated_by": 4, "updated_by_name": "Priya Sharma", "created_at": "2026-05-23 09:00:00" },
+      { "id": 9, "po_id": 2, "status": "PRODUCTION_STARTED", "description": "Laptop batch assembly started.", "updated_by": 4, "updated_by_name": "Priya Sharma", "created_at": "2026-05-26 13:00:00" },
+      { "id": 10, "po_id": 2, "status": "PACKED", "description": "50 units packed on pallets.", "updated_by": 4, "updated_by_name": "Priya Sharma", "created_at": "2026-05-29 17:00:00" }
+    ],
+    "3": [
+      { "id": 11, "po_id": 3, "status": "PO_CREATED", "description": "PO-88023 issued to PrimeByte Hardware.", "updated_by": 1, "updated_by_name": "Admin User", "created_at": "2026-05-25 08:15:00" }
+    ],
+    "4": [
+      { "id": 12, "po_id": 4, "status": "PO_CREATED", "description": "PO created.", "updated_by": 1, "updated_by_name": "Admin User", "created_at": "2026-05-10 14:00:00" },
+      { "id": 13, "po_id": 4, "status": "SUPPLIER_ACCEPTED", "description": "Accepted.", "updated_by": 3, "updated_by_name": "Rajesh Kumar", "created_at": "2026-05-11 09:00:00" },
+      { "id": 14, "po_id": 4, "status": "PRODUCTION_STARTED", "description": "Production.", "updated_by": 3, "updated_by_name": "Rajesh Kumar", "created_at": "2026-05-12 09:00:00" },
+      { "id": 15, "po_id": 4, "status": "PACKED", "description": "Packed.", "updated_by": 3, "updated_by_name": "Rajesh Kumar", "created_at": "2026-05-14 09:00:00" },
+      { "id": 16, "po_id": 4, "status": "DISPATCHED", "description": "Dispatched.", "updated_by": 3, "updated_by_name": "Rajesh Kumar", "created_at": "2026-05-16 09:00:00" },
+      { "id": 17, "po_id": 4, "status": "IN_TRANSIT", "description": "In transit.", "updated_by": 3, "updated_by_name": "Rajesh Kumar", "created_at": "2026-05-18 09:00:00" },
+      { "id": 18, "po_id": 4, "status": "DELIVERED", "description": "Delivered to site.", "updated_by": 3, "updated_by_name": "Rajesh Kumar", "created_at": "2026-05-22 09:00:00" },
+      { "id": 19, "po_id": 4, "status": "GRN_GENERATED", "description": "Goods receipt REC-9081 posted.", "updated_by": 1, "updated_by_name": "Admin User", "created_at": "2026-05-24 09:00:00" },
+      { "id": 20, "po_id": 4, "status": "INVOICE_SUBMITTED", "description": "Invoice INV-5402 submitted.", "updated_by": 3, "updated_by_name": "Rajesh Kumar", "created_at": "2026-05-26 09:00:00" },
+      { "id": 21, "po_id": 4, "status": "PAYMENT_COMPLETED", "description": "Payment cleared.", "updated_by": 1, "updated_by_name": "Admin User", "created_at": "2026-05-28 09:00:00" }
+    ]
+  },
+  "audit_logs": [],
+  "next_event_id": 22
+}

@@ -1,130 +1,82 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { AlertTriangle, CheckCircle2, Clock3, PackageCheck, Truck } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AlertTriangle, CheckCircle2, Clock3, Eye, PackageCheck, Truck } from 'lucide-react';
+import { Button } from '../../components/Button.jsx';
 import { Card, CardHeader } from '../../components/Card.jsx';
 import { DataTable } from '../../components/DataTable.jsx';
+import { OrderProgressBar } from '../../components/OrderTimeline.jsx';
 import { PageHeader } from '../../components/PageHeader.jsx';
 import { StatCard } from '../../components/StatCard.jsx';
 import { StatusBadge } from '../../components/StatusBadge.jsx';
+import { getApiBaseUrl } from '../../utils/apiBase.js';
+import { trackingStatusLabel } from '../../utils/orderTracking.js';
 
 export function OrderTracker() {
-  const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1/SUPPLIER-RELATIONSHIP-MANAGEMENT/SRM_PROJECT/backend/api').replace(/\/$/, '');
+  const [demoMode, setDemoMode] = useState(false);
+  const apiBaseUrl = getApiBaseUrl();
 
   useEffect(() => {
-    fetch(`${apiBaseUrl}/purchase_orders.php`)
+    fetch(`${apiBaseUrl}/order-tracking.php?list=1`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && Array.isArray(data.purchase_orders)) {
-          setPurchaseOrders(data.purchase_orders);
+        if (data.success && Array.isArray(data.orders)) {
+          setOrders(data.orders);
+          setDemoMode(Boolean(data.demo_mode));
         }
       })
-      .catch((err) => console.error('Failed to fetch POs for tracker:', err))
+      .catch((err) => console.error('Failed to fetch order tracking:', err))
       .finally(() => setLoading(false));
-  }, []);
-
-  const trackedOrders = useMemo(() => {
-    return purchaseOrders.map((po) => {
-      let progress = 20;
-      let checkpoint = 'PO Released & Issued';
-      let risk = 'Low';
-      let carrier = 'Tata Motors Logistics';
-
-      // Carrier based on supplier name
-      const supplierName = po.supplier_name || '';
-      if (supplierName.includes('Apex')) {
-        carrier = 'DHL Freight';
-      } else if (supplierName.includes('Vector')) {
-        carrier = 'FedEx Supply Chain';
-      } else if (supplierName.includes('Northstar')) {
-        carrier = 'Northstar Fleet';
-      }
-
-      switch (po.status) {
-        case 'issued':
-          progress = 20;
-          checkpoint = 'Awaiting carrier dispatch';
-          risk = 'Low';
-          break;
-        case 'pending':
-          progress = 20;
-          checkpoint = 'Awaiting administrative clearance';
-          risk = 'High';
-          break;
-        case 'shipped':
-          progress = 60;
-          checkpoint = 'In Transit - departed regional hub';
-          risk = 'Low';
-          break;
-        case 'delivered':
-          progress = 85;
-          checkpoint = 'Delivered to gate, pending inspection';
-          risk = 'Low';
-          break;
-        case 'fulfilled':
-          progress = 100;
-          checkpoint = 'Goods received & approved';
-          risk = 'Low';
-          break;
-        case 'cancelled':
-          progress = 0;
-          checkpoint = 'Order cancelled';
-          risk = 'High';
-          break;
-      }
-
-      return {
-        id: po.po_number,
-        supplier: supplierName || 'Unknown Supplier',
-        stage: (po.status || '').toUpperCase(),
-        progress,
-        eta: po.delivery_date || 'N/A',
-        carrier,
-        checkpoint,
-        risk: risk === 'High' ? 'High' : 'Low',
-      };
-    });
-  }, [purchaseOrders]);
+  }, [apiBaseUrl]);
 
   const trackerStats = useMemo(() => {
-    const inTransit = purchaseOrders.filter(po => po.status === 'shipped').length;
-    const delayed = purchaseOrders.filter(po => po.status === 'pending').length;
-    const totalCount = purchaseOrders.length;
-    
-    // Percentage on schedule (not pending/delayed)
-    const onSchedulePct = totalCount > 0 
-      ? Math.round(((totalCount - delayed) / totalCount) * 100) 
-      : 100;
+    const inTransit = orders.filter((o) => o.tracking_status === 'IN_TRANSIT' || o.status === 'shipped').length;
+    const delayed = orders.filter((o) => ['PO_CREATED', 'pending', 'issued'].includes(o.tracking_status || o.status)).length;
+    const totalCount = orders.length;
+    const onSchedulePct = totalCount > 0 ? Math.round(((totalCount - delayed) / totalCount) * 100) : 100;
 
     return [
       { label: 'In Transit', value: String(inTransit), change: 'Active freight', trend: 'up', icon: Truck },
       { label: 'On Schedule', value: `${onSchedulePct}%`, change: 'POs on time', trend: 'up', icon: CheckCircle2 },
-      { label: 'Delayed / Hold', value: String(delayed), change: 'Requires resolution', trend: 'down', icon: AlertTriangle },
+      { label: 'Awaiting Action', value: String(delayed), change: 'Early stage POs', trend: 'down', icon: AlertTriangle },
       { label: 'Active Pipeline', value: String(totalCount), change: 'Total tracked orders', trend: 'up', icon: Clock3 },
     ];
-  }, [purchaseOrders]);
+  }, [orders]);
 
   const milestones = useMemo(() => {
-    const total = purchaseOrders.length || 1;
-    const released = purchaseOrders.filter(po => ['issued', 'pending', 'shipped', 'delivered', 'fulfilled'].includes(po.status)).length;
-    const confirmed = purchaseOrders.filter(po => ['shipped', 'delivered', 'fulfilled'].includes(po.status)).length;
-    const transit = purchaseOrders.filter(po => ['shipped', 'delivered', 'fulfilled'].includes(po.status)).length;
-    const received = purchaseOrders.filter(po => ['delivered', 'fulfilled'].includes(po.status)).length;
-    const approved = purchaseOrders.filter(po => po.status === 'fulfilled').length;
-
+    const total = orders.length || 1;
+    const pct = (filterFn) => Math.round((orders.filter(filterFn).length / total) * 100);
     return [
-      { label: 'PO Released', value: Math.round((released / total) * 100) },
-      { label: 'Supplier Confirmed', value: Math.round((confirmed / total) * 100) },
-      { label: 'In Transit', value: Math.round((transit / total) * 100) },
-      { label: 'Received', value: Math.round((received / total) * 100) },
-      { label: 'Fulfilled', value: Math.round((approved / total) * 100) },
+      { label: 'PO Released', value: pct((o) => o.progress_percent >= 10) },
+      { label: 'Supplier Confirmed', value: pct((o) => o.progress_percent >= 20) },
+      { label: 'In Transit', value: pct((o) => o.progress_percent >= 75) },
+      { label: 'Received', value: pct((o) => o.progress_percent >= 90) },
+      { label: 'Fulfilled', value: pct((o) => o.progress_percent >= 100) },
     ];
-  }, [purchaseOrders]);
+  }, [orders]);
 
-  const exceptions = useMemo(() => {
-    return purchaseOrders.filter(po => po.status === 'pending' || po.status === 'cancelled');
-  }, [purchaseOrders]);
+  const exceptions = useMemo(
+    () => orders.filter((o) => o.status === 'cancelled' || (o.progress_percent ?? 0) <= 20),
+    [orders],
+  );
+
+  const tableRows = useMemo(
+    () =>
+      orders.map((o) => ({
+        id: o.po_id ?? o.id,
+        po_number: o.po_number,
+        supplier: o.supplier_name || 'Unknown Supplier',
+        stage: trackingStatusLabel(o.tracking_status) || o.status,
+        tracking_status: o.tracking_status,
+        progress: o.progress_percent ?? 10,
+        eta: o.delivery_date || 'N/A',
+        tracking_number: o.tracking_number || '—',
+        checkpoint: o.latest_checkpoint || '—',
+        risk: (o.progress_percent ?? 0) <= 20 ? 'High' : 'Low',
+      })),
+    [orders],
+  );
 
   return (
     <div className="space-y-6">
@@ -132,6 +84,13 @@ export function OrderTracker() {
         title="Order Tracker"
         description="Track live PO fulfillment progress, logistics carriers, shipment status, and active bottlenecks."
       />
+
+      {demoMode && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <strong>Demo tracking data.</strong> Showing seeded purchase orders with live timeline updates via{' '}
+          <code className="rounded bg-amber-100 px-1">order-tracking.php</code>.
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {trackerStats.map((stat) => (
@@ -147,27 +106,46 @@ export function OrderTracker() {
           </div>
         ) : (
           <DataTable
-            data={trackedOrders}
+            data={tableRows}
             columns={[
-              { key: 'id', header: 'PO Number', render: (row) => <span className="font-bold font-mono text-slate-800 dark:text-slate-200">{row.id}</span> },
+              {
+                key: 'po_number',
+                header: 'PO Number',
+                render: (row) => (
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{row.po_number}</span>
+                ),
+              },
               { key: 'supplier', header: 'Supplier' },
-              { key: 'stage', header: 'Stage', render: (row) => <StatusBadge status={row.stage.toLowerCase()} /> },
+              {
+                key: 'stage',
+                header: 'Current Status',
+                render: (row) => <StatusBadge status={row.tracking_status || row.stage} />,
+              },
               {
                 key: 'progress',
                 header: 'Progress',
                 render: (row) => (
                   <div className="w-44">
-                    <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
-                      <div className="h-2 rounded-full bg-blue-600" style={{ width: `${row.progress}%` }} />
-                    </div>
-                    <p className="mt-1 text-xs font-semibold text-slate-500">{row.progress}% complete</p>
+                    <OrderProgressBar percent={row.progress} />
                   </div>
                 ),
               },
-              { key: 'eta', header: 'ETA' },
-              { key: 'carrier', header: 'Carrier' },
+              { key: 'eta', header: 'Expected Delivery' },
+              { key: 'tracking_number', header: 'Tracking Number' },
               { key: 'checkpoint', header: 'Latest Checkpoint' },
               { key: 'risk', header: 'Risk', render: (row) => <StatusBadge status={row.risk} /> },
+              {
+                key: 'actions',
+                header: 'Actions',
+                render: (row) => (
+                  <Link to={`/admin/order-tracker/${row.id}`}>
+                    <Button variant="secondary" className="h-8 px-2 text-xs">
+                      <Eye className="h-3.5 w-3.5" />
+                      View Timeline
+                    </Button>
+                  </Link>
+                ),
+              },
             ]}
           />
         )}
@@ -177,7 +155,10 @@ export function OrderTracker() {
         <CardHeader title="Stage Summary" subtitle="How far current orders have moved through the fulfillment process" />
         <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-5">
           {milestones.map((item) => (
-            <div key={item.label} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-4 animate-in fade-in duration-200">
+            <div
+              key={item.label}
+              className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50"
+            >
               <div className="mb-3 flex items-center justify-between gap-3">
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{item.label}</span>
                 <span className="text-sm font-bold text-slate-950 dark:text-slate-50">{item.value}%</span>
@@ -195,28 +176,35 @@ export function OrderTracker() {
         <div className="grid gap-4 p-5 md:grid-cols-3">
           {exceptions.length > 0 ? (
             exceptions.map((po) => (
-              <div 
-                key={po.id} 
-                className={`rounded-lg border p-4 ${po.status === 'cancelled' ? 'border-rose-100 bg-rose-50/50 dark:border-rose-950/20 dark:bg-rose-950/10' : 'border-amber-100 bg-amber-50/50 dark:border-amber-950/20 dark:bg-amber-950/10'}`}
+              <div
+                key={po.po_id ?? po.id}
+                className={`rounded-lg border p-4 ${
+                  po.status === 'cancelled'
+                    ? 'border-rose-100 bg-rose-50/50'
+                    : 'border-amber-100 bg-amber-50/50'
+                }`}
               >
                 <div className="flex items-center gap-2">
                   <AlertTriangle className={`h-5 w-5 ${po.status === 'cancelled' ? 'text-rose-600' : 'text-amber-600'}`} />
-                  <span className={`text-sm font-bold ${po.status === 'cancelled' ? 'text-rose-900 dark:text-rose-400' : 'text-amber-900 dark:text-amber-400'}`}>{po.po_number} - {po.status.toUpperCase()}</span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {po.po_number} — {trackingStatusLabel(po.tracking_status)}
+                  </span>
                 </div>
-                <p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-400">
-                  {po.status === 'cancelled' 
-                    ? `This Purchase Order with ${po.supplier_name || 'Unknown Supplier'} was formally cancelled and is legally void.` 
-                    : `This PO is currently on hold. Contact sourcing or supplier manager to resolve the administrative bottleneck.`
-                  }
-                </p>
+                <p className="mt-2 text-xs leading-5 text-slate-600">{po.latest_checkpoint}</p>
+                <Link
+                  to={`/admin/order-tracker/${po.po_id ?? po.id}`}
+                  className="mt-2 inline-block text-xs font-semibold text-blue-600 hover:underline"
+                >
+                  View timeline
+                </Link>
               </div>
             ))
           ) : (
-            <div className="col-span-3 rounded-lg border border-emerald-100 bg-emerald-50/50 dark:border-emerald-950/20 dark:bg-emerald-950/10 p-4 flex items-center gap-3">
+            <div className="col-span-3 flex items-center gap-3 rounded-lg border border-emerald-100 bg-emerald-50/50 p-4">
               <PackageCheck className="h-5 w-5 text-emerald-600" />
               <div>
-                <p className="text-sm font-bold text-emerald-900 dark:text-emerald-400">0 orders currently delayed</p>
-                <p className="text-xs text-slate-600 dark:text-slate-400">All purchase order pipelines are running smoothly.</p>
+                <p className="text-sm font-bold text-emerald-900">0 orders currently delayed</p>
+                <p className="text-xs text-slate-600">All purchase order pipelines are running smoothly.</p>
               </div>
             </div>
           )}
