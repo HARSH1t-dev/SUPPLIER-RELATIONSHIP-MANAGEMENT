@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Download, Eye, X, CheckCircle, Truck, XCircle, AlertCircle, ShieldAlert } from 'lucide-react';
+import { Plus, Download, Eye, X, CheckCircle, Truck, XCircle, AlertCircle, ShieldAlert, Star } from 'lucide-react';
 import { Button } from '../../components/Button.jsx';
 import { Card, CardHeader } from '../../components/Card.jsx';
 import { DataTable } from '../../components/DataTable.jsx';
@@ -14,6 +14,18 @@ export function PurchaseOrders() {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [poDetails, setPoDetails] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
+
+  // Rating & Review Form State
+  const [formReviewText, setFormReviewText] = useState('');
+  const [formRatingQuality, setFormRatingQuality] = useState(5);
+  const [formRatingPrice, setFormRatingPrice] = useState(5);
+  const [formRatingDelivery, setFormRatingDelivery] = useState(5);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState('');
+  const [submitError, setSubmitError] = useState('');
+
+  const storedUser = sessionStorage.getItem('srm_user');
+  const currentUser = storedUser ? JSON.parse(storedUser) : { id: 1, full_name: 'Admin User' };
 
   const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1/SUPPLIER-RELATIONSHIP-MANAGEMENT/SRM_PROJECT/backend/api').replace(/\/$/, '');
 
@@ -80,6 +92,79 @@ export function PurchaseOrders() {
         console.error(err);
         alert('An error occurred while updating PO status.');
       });
+  };
+
+  // Star Rating Helper Component
+  function StarRating({ rating, onChange = null, size = "h-4 w-4" }) {
+    const isInteractive = typeof onChange === 'function';
+    return (
+      <div className="flex items-center gap-0.5">
+        {[1, 2, 3, 4, 5].map((star) => {
+          const isFilled = star <= rating;
+          return (
+            <button
+              key={star}
+              type="button"
+              disabled={!isInteractive}
+              onClick={() => isInteractive && onChange(star)}
+              className={`${isInteractive ? 'cursor-pointer hover:scale-110 transition-transform' : ''}`}
+            >
+              <Star
+                className={`${size} ${
+                  isFilled
+                    ? 'fill-amber-500 stroke-amber-500'
+                    : 'fill-transparent stroke-slate-300 dark:stroke-slate-700'
+                }`}
+              />
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  const handleSubmitReview = (e) => {
+    e.preventDefault();
+    if (!poDetails) return;
+    setSubmitLoading(true);
+    setSubmitSuccess('');
+    setSubmitError('');
+
+    const targetSupplierId = poDetails.db_supplier_id || 1; // Resilient fallback to supplier_id 1
+
+    const payload = {
+      supplier_id: targetSupplierId,
+      po_id: poDetails.id,
+      review: formReviewText,
+      reviewed_by: currentUser.id,
+      rating_quality: formRatingQuality,
+      rating_price: formRatingPrice,
+      rating_delivery: formRatingDelivery
+    };
+
+    fetch(`${apiBaseUrl}/ratings.php`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setSubmitSuccess('Thank you! Supplier performance rating has been successfully saved in the database.');
+          setFormReviewText('');
+          // Re-fetch PO details to display the saved review
+          handleInspectPo(poDetails.id);
+        } else {
+          setSubmitError(data.message || 'Failed to submit review.');
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to submit review:', err);
+        setSubmitError('Failed to submit review. Server offline or network error.');
+      })
+      .finally(() => setSubmitLoading(false));
   };
 
   const columns = [
@@ -311,6 +396,101 @@ export function PurchaseOrders() {
                     )}
                   </div>
                 </div>
+
+                {/* Supplier Performance Rating Panel (Only for Fulfilled status) */}
+                {poDetails.status === 'fulfilled' && (
+                  <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                      <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Supplier Performance Review</h4>
+                    </div>
+
+                    {poDetails.review ? (
+                      // Read-Only Review
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                          <span className="font-semibold text-slate-500">Evaluation Submitted</span>
+                          <div className="flex items-center gap-1">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">Overall:</span>
+                            <StarRating rating={poDetails.review.rating} size="h-3.5 w-3.5" />
+                          </div>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-950 p-3 rounded italic border border-slate-100 dark:border-slate-900">
+                          "{poDetails.review.review}"
+                        </p>
+                        <div className="flex gap-4 text-[10px] font-bold text-slate-500 pt-1">
+                          <span>Quality: <span className="text-amber-600 dark:text-amber-400">{poDetails.review.rating_quality}/5 ⭐</span></span>
+                          <span>Price/Value: <span className="text-amber-600 dark:text-amber-400">{poDetails.review.rating_price}/5 ⭐</span></span>
+                          <span>Delivery: <span className="text-amber-600 dark:text-amber-400">{poDetails.review.rating_delivery}/5 ⭐</span></span>
+                        </div>
+                      </div>
+                    ) : (
+                      // Interactive Form
+                      <form onSubmit={handleSubmitReview} className="space-y-4">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Rate the supplier's performance for this specific purchase order. Your feedback will update their composite ratings.
+                        </p>
+
+                        {submitSuccess && (
+                          <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 text-xs rounded-lg flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 flex-shrink-0" />
+                            <span>{submitSuccess}</span>
+                          </div>
+                        )}
+
+                        {submitError && (
+                          <div className="p-2.5 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 text-xs rounded-lg flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                            <span>{submitError}</span>
+                          </div>
+                        )}
+
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          {/* Quality Star Input */}
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Quality</label>
+                            <div className="flex items-center gap-1">
+                              <StarRating rating={formRatingQuality} onChange={setFormRatingQuality} size="h-3.5 w-3.5" />
+                            </div>
+                          </div>
+
+                          {/* Price Star Input */}
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Price/Value</label>
+                            <div className="flex items-center gap-1">
+                              <StarRating rating={formRatingPrice} onChange={setFormRatingPrice} size="h-3.5 w-3.5" />
+                            </div>
+                          </div>
+
+                          {/* Delivery Star Input */}
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Delivery</label>
+                            <div className="flex items-center gap-1">
+                              <StarRating rating={formRatingDelivery} onChange={setFormRatingDelivery} size="h-3.5 w-3.5" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Comment text */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Comments</label>
+                          <textarea
+                            placeholder="Write your performance review comments..."
+                            rows="2"
+                            required
+                            value={formReviewText}
+                            onChange={(e) => setFormReviewText(e.target.value)}
+                            className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs outline-none transition placeholder:text-slate-400 focus:border-brand-500 dark:border-slate-800 dark:bg-slate-950 dark:text-white resize-none"
+                          ></textarea>
+                        </div>
+
+                        <Button type="submit" disabled={submitLoading} className="w-full justify-center text-xs py-1.5 h-auto">
+                          {submitLoading ? 'Submitting Evaluation...' : 'Submit Supplier Rating'}
+                        </Button>
+                      </form>
+                    )}
+                  </div>
+                )}
 
                 {/* Legal Terms Preview */}
                 <div>

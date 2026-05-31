@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RATING SYSTEM</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            color: #333;
+            background-color: #f4f4f9;
+            padding: 2rem;
+        }
+        .supplier-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .upload-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .upload-card input[type="file"] {
+            margin-bottom: 1rem;
+        }
+        .upload-card button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .upload-card button:hover {
+            background: #1d4ed8;
+        }
+        .supplier-table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            display: none; /* Hidden until data loads */
+        }
+        .supplier-table th, .supplier-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .supplier-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            color: #666;
+        }
+        .top-rank {
+            background-color: #f0fdf4;
+            font-weight: 500;
+        }
+        .score-badge {
+            background: #2563eb;
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            display: inline-block;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .top-rank .score-badge {
+            background: #16a34a;
+        }
+        .loader {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-top: 2rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="supplier-container">
+        
+        <div class="upload-card">
+            <h2>Upload Supplier Data</h2>
+            <input type="file" id="jsonFileInput" accept=".json">
+            <br>
+            <button onclick="uploadAndRank()">Calculate Rankings</button>
+        </div>
+
+        <div id="loader" class="loader">Processing file...</div>
+
+        <table class="supplier-table" id="supplierTable">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Supplier Name</th>
+                    <th>Price</th>
+                    <th>Rating</th>
+                    <th>Delivery Time</th>
+                    <th>Feasibility Score</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        function uploadAndRank() {
+            const fileInput = document.getElementById('jsonFileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please select a JSON file first.");
+                return;
+            }
+
+            // Show loader, hide table
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('supplierTable').style.display = 'none';
+
+            // Prepare the file to be sent via POST request
+            const formData = new FormData();
+            formData.append('json_file', file);
+
+            // Fetch data from the PHP backend
+            fetch('http://localhost:8000/api.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const loader = document.getElementById('loader');
+                
+                if (data.error) {
+                    loader.innerText = data.error;
+                    return;
+                }
+
+                const tableBody = document.getElementById('tableBody');
+                const table = document.getElementById('supplierTable');
+
+                // Clear old data and hide loader
+                tableBody.innerHTML = '';
+                loader.style.display = 'none';
+                table.style.display = 'table';
+
+                // Loop through the sorted JSON and create table rows
+                data.forEach((supplier, index) => {
+                    const row = document.createElement('tr');
+                    
+                    if (index === 0) row.className = 'top-rank';
+
+                    row.innerHTML = `
+                        <td>#${index + 1}</td>
+                        <td>${supplier.name}</td>
+                        <td>₹${supplier.price.toLocaleString('en-IN')}</td> <td>${supplier.rating} ⭐</td>
+                        <td>${supplier.delivery_days} Days</td>
+                        <td>
+                            <div class="score-badge">
+                                ${supplier.feasibility_score} / 100
+                            </div>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => {
+                document.getElementById('loader').innerText = 'Error processing data. Is the PHP server running?';
+                console.error('Fetch Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>

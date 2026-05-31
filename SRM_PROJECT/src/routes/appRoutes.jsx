@@ -23,6 +23,7 @@ import { AuditLogs } from '../pages/admin/AuditLogs.jsx';
 import { RoleManagement } from '../pages/admin/RoleManagement.jsx';
 import { AdminProfile } from '../pages/admin/AdminProfile.jsx';
 import { AdminInvoices } from '../pages/admin/AdminInvoices.jsx';
+import { SupplierRankings } from '../pages/admin/SupplierRankings.jsx';
 import { SupplierDashboard } from '../pages/supplier/Dashboard.jsx';
 import { SupplierProducts } from '../pages/supplier/Products.jsx';
 import { SupplierRFQs } from '../pages/supplier/RFQs.jsx';
@@ -58,6 +59,7 @@ export const appRoutes = [
     children: [
       { index: true, element: <AdminDashboard /> },
       { path: 'suppliers', element: <SupplierManagement /> },
+      { path: 'supplier-rankings', element: <SupplierRankings /> },
       { path: 'products', element: <ProductManagement /> },
       { path: 'rfqs', element: <RFQManagement /> },
       { path: 'rfqs/:id', element: <RFQDetail /> },

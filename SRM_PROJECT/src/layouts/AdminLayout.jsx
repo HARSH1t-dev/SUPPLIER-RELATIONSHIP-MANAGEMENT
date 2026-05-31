@@ -15,6 +15,7 @@ import {
   Users,
   UserCog,
   ReceiptText,
+  Award,
 } from 'lucide-react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { DashboardLayout } from './DashboardLayout.jsx';
@@ -27,6 +28,7 @@ const adminItems = [
       { label: 'RFQs', to: '/admin/rfqs', icon: FileText },
       { label: 'Bid Management', to: '/admin/bids', icon: GitCompare },
       { label: 'Suppliers', to: '/admin/suppliers', icon: Users },
+      { label: 'Supplier Rankings', to: '/admin/supplier-rankings', icon: Award },
     ],
   },
   {

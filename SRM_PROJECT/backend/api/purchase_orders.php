@@ -45,6 +45,7 @@ switch ($method) {
                     po.supplier_quote_id,
                     po.rfq_id,
                     po.supplier_id,
+                    s.supplier_id   AS db_supplier_id,
                     po.total_amount,
                     po.issued_by,
                     po.issued_date AS order_date,
@@ -80,6 +81,7 @@ switch ($method) {
             // Convert fields to correct types
             $po['id'] = (int)$po['id'];
             $po['supplier_id'] = (int)$po['supplier_id'];
+            $po['db_supplier_id'] = $po['db_supplier_id'] !== null ? (int)$po['db_supplier_id'] : null;
             $po['total_amount'] = (float)$po['total_amount'];
             $po['final_terms_agreed'] = (bool)$po['final_terms_agreed'];
             $po['issued_to_supplier'] = (bool)$po['issued_to_supplier'];
@@ -98,6 +100,23 @@ switch ($method) {
             }
 
             $po['items'] = $items;
+
+            // Fetch review associated with this PO
+            $stmt3 = $pdo->prepare("
+                SELECT review_id, rating, review, rating_quality, rating_price, rating_delivery, reviewed_at
+                FROM supplier_reviews
+                WHERE po_id = ?
+            ");
+            $stmt3->execute([$_GET['id']]);
+            $review = $stmt3->fetch();
+            if ($review) {
+                $review['review_id'] = (int)$review['review_id'];
+                $review['rating'] = (int)$review['rating'];
+                $review['rating_quality'] = (int)$review['rating_quality'];
+                $review['rating_price'] = (int)$review['rating_price'];
+                $review['rating_delivery'] = (int)$review['rating_delivery'];
+            }
+            $po['review'] = $review ? $review : null;
 
             echo json_encode([
                 "success" => true,
@@ -135,6 +154,7 @@ switch ($method) {
                     po.issued_to_supplier,
                     po.issued_date AS created_at,
                     s.company_name AS supplier_name,
+                    s.supplier_id  AS db_supplier_id,
                     r.id           AS rfq_number
                 FROM purchase_orders po
                 LEFT JOIN users u     ON po.supplier_id = u.id
@@ -148,6 +168,7 @@ switch ($method) {
 
             foreach ($pos as &$po) {
                 $po['id'] = (int)$po['id'];
+                $po['db_supplier_id'] = $po['db_supplier_id'] !== null ? (int)$po['db_supplier_id'] : null;
                 $po['total_amount'] = (float)$po['total_amount'];
                 $po['final_terms_agreed'] = (bool)$po['final_terms_agreed'];
                 $po['issued_to_supplier'] = (bool)$po['issued_to_supplier'];

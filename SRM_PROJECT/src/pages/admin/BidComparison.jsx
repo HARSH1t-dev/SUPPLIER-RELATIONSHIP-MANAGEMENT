@@ -128,20 +128,24 @@ export function BidComparison() {
       .filter((b) => (b.rfq_package || b.rfqPackage) === selectedRfqId)
       .map((b) => {
         let supplier = b.supplier_name || b.supplier || 'Apex Industrial Components';
-        let rating = 4.8;
         
-        if (b.id === 'BID-1' || b.id === '1') {
-          supplier = 'Apex Industrial Components';
-          rating = 4.8;
-        } else if (b.id === 'BID-2' || b.id === '2') {
-          supplier = 'Vector Packaging Co.';
-          rating = 4.4;
-        } else if (b.id === 'BID-3' || b.id === '3') {
-          supplier = 'Northstar Logistics';
-          rating = 4.6;
-        } else if (b.id === 'BID-4' || b.id === '4') {
-          supplier = 'Helio Energy Systems';
-          rating = 4.1;
+        // Use the real supplier rating from the database if available
+        let rating = b.supplier_rating !== undefined && b.supplier_rating !== null
+          ? parseFloat(b.supplier_rating)
+          : null;
+
+        if (rating === null) {
+          if (b.id === 'BID-1' || b.id === '1') {
+            rating = 4.8;
+          } else if (b.id === 'BID-2' || b.id === '2') {
+            rating = 4.4;
+          } else if (b.id === 'BID-3' || b.id === '3') {
+            rating = 4.6;
+          } else if (b.id === 'BID-4' || b.id === '4') {
+            rating = 4.1;
+          } else {
+            rating = 5.0;
+          }
         }
 
         return {

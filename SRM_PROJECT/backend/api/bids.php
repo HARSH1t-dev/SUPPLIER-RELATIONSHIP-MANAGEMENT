@@ -18,7 +18,12 @@ $connection = db_connection();
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
-    $result = $connection->query('SELECT * FROM supplier_quotes ORDER BY submitted_at DESC');
+    $result = $connection->query('
+        SELECT sq.*, s.rating AS supplier_rating
+        FROM supplier_quotes sq
+        LEFT JOIN suppliers s ON s.user_id = sq.supplier_id
+        ORDER BY sq.submitted_at DESC
+    ');
     $bids = [];
     while ($row = $result->fetch_assoc()) {
         $bidId = $row['id'];
@@ -56,6 +61,7 @@ if ($method === 'GET') {
             'best' => (bool)$row['best'],
             'user_id' => (int)$row['supplier_id'],
             'supplier_name' => $row['supplier_name'],
+            'supplier_rating' => $row['supplier_rating'] !== null ? (float)$row['supplier_rating'] : null,
             'created_at' => $row['submitted_at'],
             'subtotal' => (float)$row['subtotal'],
             'tax_total' => (float)$row['tax_total'],
