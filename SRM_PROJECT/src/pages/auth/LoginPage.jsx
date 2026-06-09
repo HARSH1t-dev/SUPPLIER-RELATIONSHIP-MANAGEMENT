@@ -365,7 +365,7 @@ export function LoginPage() {
                         <Link to="/forgot-password" className="auth-forgot">Forgot password?</Link>
                       </div>
 
-                      <HoverBorderGradient containerClassName="w-full mt-2" className="h-11">
+                      <HoverBorderGradient as="div" containerClassName="w-full mt-2" className="h-11">
                         <button 
                           type="submit" 
                           className="w-full h-full flex items-center justify-center gap-2 font-bold text-[14px]"

@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { Truck, Shield, ArrowRight, ArrowLeft, Eye, ShieldCheck, Network, BarChart2, CheckCircle2, User, Building2, Mail, Lock } from 'lucide-react';
 import { GlobeGraphic } from './AnimatedAuthSVGs';
 import { GridBackground } from '../../components/ui/GridBackground';
-import { HoverBorderGradient } from '../../components/ui/HoverBorderGradient';
 import ThemeToggle from '../../../Theme.jsx';
 import './LoginPage.css';
 

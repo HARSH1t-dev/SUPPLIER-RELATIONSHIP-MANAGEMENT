@@ -87,7 +87,7 @@ export function ForgotPassword() {
                       {error && <span className="auth-field__error">{error}</span>}
                     </div>
 
-                    <HoverBorderGradient containerClassName="w-full mt-2" className="h-11">
+                    <HoverBorderGradient as="div" containerClassName="w-full mt-2" className="h-11">
                       <button type="submit" className="w-full h-full flex items-center justify-center gap-2 font-bold text-[14px]" disabled={isLoading}>
                         {isLoading ? <span className="auth-spinner"/> : <>Send instructions <ArrowRight size={15}/></>}
                       </button>

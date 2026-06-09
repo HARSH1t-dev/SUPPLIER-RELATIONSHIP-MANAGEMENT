@@ -7,6 +7,7 @@ import {
 import { Card, CardHeader } from '../../components/Card.jsx';
 import { PageHeader } from '../../components/PageHeader.jsx';
 import { currency } from '../../utils/formatters.js';
+import { StatusBadge } from '../../components/StatusBadge.jsx';
 
 export function SupplierDashboard() {
   const [stats, setStats] = useState({
