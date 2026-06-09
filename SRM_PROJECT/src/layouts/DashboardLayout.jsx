@@ -2,6 +2,7 @@ import { useLocation } from 'react-router-dom';
 import { useDisclosure } from '../hooks/useDisclosure.js';
 import { Navbar } from '../components/Navbar.jsx';
 import { Sidebar } from '../components/Sidebar.jsx';
+import { ToastContainer } from '../components/ToastNotification.jsx';
 
 export function DashboardLayout({ items, title, subtitle, children }) {
   const menu = useDisclosure(false);
@@ -22,6 +23,7 @@ export function DashboardLayout({ items, title, subtitle, children }) {
         <Navbar title={current?.label || title} onMenu={menu.open} />
         <main className="page-enter mx-auto w-full max-w-7xl p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
+      <ToastContainer />
     </div>
   );
 }

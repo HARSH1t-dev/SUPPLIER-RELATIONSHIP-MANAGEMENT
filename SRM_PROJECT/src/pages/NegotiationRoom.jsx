@@ -143,6 +143,34 @@ export function NegotiationRoom() {
       });
       const data = await res.json();
       if (data.success) {
+        // Create Negotiation Notification for Message
+        try {
+          const savedNotifs = localStorage.getItem('srm_notifications');
+          let notifsList = [];
+          if (savedNotifs) {
+            const parsed = JSON.parse(savedNotifs);
+            if (Array.isArray(parsed)) {
+              notifsList = parsed.filter(Boolean);
+            }
+          }
+          const senderName = currentUser.role === 'admin' ? 'Buyer' : (currentUser.companyName || currentUser.fullName || 'Supplier');
+          const newNotif = {
+            id: Date.now(),
+            category: 'sourcing',
+            icon: 'MessageSquare',
+            iconColor: 'text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/20',
+            title: `New Message in ${bidId}`,
+            body: `${senderName}: "${messageInput.length > 60 ? messageInput.substring(0, 57) + '...' : messageInput}"`,
+            time: 'Just now',
+            read: false,
+            type: 'Business'
+          };
+          localStorage.setItem('srm_notifications', JSON.stringify([newNotif, ...notifsList]));
+          window.dispatchEvent(new Event('srm_notifications_updated'));
+        } catch (err) {
+          console.warn('Failed to save message notification', err);
+        }
+
         setMessageInput('');
         fetchRoomData(false);
       } else {
@@ -176,6 +204,35 @@ export function NegotiationRoom() {
       });
       const data = await res.json();
       if (data.success) {
+        // Create Negotiation Notification for Counter-Offer
+        try {
+          const savedNotifs = localStorage.getItem('srm_notifications');
+          let notifsList = [];
+          if (savedNotifs) {
+            const parsed = JSON.parse(savedNotifs);
+            if (Array.isArray(parsed)) {
+              notifsList = parsed.filter(Boolean);
+            }
+          }
+          const initiatorName = currentUser.role === 'admin' ? 'Buyer' : (currentUser.companyName || currentUser.fullName || 'Supplier');
+          const formattedPrice = currency(Number(counterPriceInput));
+          const newNotif = {
+            id: Date.now(),
+            category: 'sourcing',
+            icon: 'ArrowRightLeft',
+            iconColor: 'text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/20',
+            title: `Counter-Offer Proposed: ${bidId}`,
+            body: `${initiatorName} proposed a revised counter-offer of ${formattedPrice}. Note: "${counterNoteInput || 'No comment'}"`,
+            time: 'Just now',
+            read: false,
+            type: 'Business'
+          };
+          localStorage.setItem('srm_notifications', JSON.stringify([newNotif, ...notifsList]));
+          window.dispatchEvent(new Event('srm_notifications_updated'));
+        } catch (err) {
+          console.warn('Failed to save counter-offer notification', err);
+        }
+
         setShowCounterModal(false);
         setCounterPriceInput('');
         setCounterNoteInput('');
@@ -219,6 +276,59 @@ export function NegotiationRoom() {
       });
       const data = await res.json();
       if (data.success) {
+        // Create Negotiation Notification for Response
+        try {
+          const savedNotifs = localStorage.getItem('srm_notifications');
+          let notifsList = [];
+          if (savedNotifs) {
+            const parsed = JSON.parse(savedNotifs);
+            if (Array.isArray(parsed)) {
+              notifsList = parsed.filter(Boolean);
+            }
+          }
+          const responderName = currentUser.role === 'admin' ? 'Buyer' : (currentUser.companyName || currentUser.fullName || 'Supplier');
+          
+          let notifTitle = '';
+          let notifBody = '';
+          let notifIcon = 'MessageSquare';
+          let notifIconColor = 'text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/20';
+
+          if (responseType === 'accept') {
+            notifTitle = `Counter-Offer Accepted: ${bidId}`;
+            notifBody = `${responderName} has accepted the counter-offer terms. Pricing is locked.`;
+            notifIcon = 'CheckCircle';
+            notifIconColor = 'text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/20';
+          } else if (responseType === 'reject') {
+            notifTitle = `Counter-Offer Rejected: ${bidId}`;
+            notifBody = `${responderName} has rejected the active counter-offer terms.`;
+            notifIcon = 'AlertTriangle';
+            notifIconColor = 'text-rose-600 bg-rose-50 dark:text-rose-400 dark:bg-rose-950/20';
+          } else if (responseType === 'counter') {
+            notifTitle = `Revised Counter-Offer: ${bidId}`;
+            notifBody = `${responderName} counter-proposed a revised price of ${currency(price)}. Note: "${note || 'No comment'}"`;
+            notifIcon = 'ArrowRightLeft';
+            notifIconColor = 'text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/20';
+          }
+
+          if (notifTitle) {
+            const newNotif = {
+              id: Date.now(),
+              category: 'sourcing',
+              icon: notifIcon,
+              iconColor: notifIconColor,
+              title: notifTitle,
+              body: notifBody,
+              time: 'Just now',
+              read: false,
+              type: 'Business'
+            };
+            localStorage.setItem('srm_notifications', JSON.stringify([newNotif, ...notifsList]));
+            window.dispatchEvent(new Event('srm_notifications_updated'));
+          }
+        } catch (err) {
+          console.warn('Failed to save respond-counter notification', err);
+        }
+
         fetchRoomData(false);
         showAlert(
           'Action Success', 
@@ -260,6 +370,33 @@ export function NegotiationRoom() {
           });
           const data = await res.json();
           if (data.success) {
+            // Create Finalization Notification
+            try {
+              const savedNotifs = localStorage.getItem('srm_notifications');
+              let notifsList = [];
+              if (savedNotifs) {
+                const parsed = JSON.parse(savedNotifs);
+                if (Array.isArray(parsed)) {
+                  notifsList = parsed.filter(Boolean);
+                }
+              }
+              const newNotif = {
+                id: Date.now(),
+                category: 'orders',
+                icon: 'ShoppingCart',
+                iconColor: 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/20',
+                title: `Contract Finalized & PO Issued: ${data.po_number || 'PO Ref'}`,
+                body: `Agreement successfully finalized for bid proposal ${bidId}. Purchase Order has been issued to the supplier.`,
+                time: 'Just now',
+                read: false,
+                type: 'Business'
+              };
+              localStorage.setItem('srm_notifications', JSON.stringify([newNotif, ...notifsList]));
+              window.dispatchEvent(new Event('srm_notifications_updated'));
+            } catch (err) {
+              console.warn('Failed to save finalize contract notification', err);
+            }
+
             showAlert(
               'Contract Finalized', 
               `Contract successfully finalized! Purchase Order ${data.po_number} has been generated.`, 

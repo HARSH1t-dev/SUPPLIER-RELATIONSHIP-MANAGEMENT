@@ -135,6 +135,33 @@ export function RFQManagement() {
       return updated;
     });
 
+    // Create Sourcing Notification for new RFQ
+    try {
+      const savedNotifs = localStorage.getItem('srm_notifications');
+      let notifsList = [];
+      if (savedNotifs) {
+        const parsed = JSON.parse(savedNotifs);
+        if (Array.isArray(parsed)) {
+          notifsList = parsed.filter(Boolean);
+        }
+      }
+      const newNotif = {
+        id: Date.now(),
+        category: 'sourcing',
+        icon: 'FileText',
+        iconColor: 'text-violet-600 bg-violet-50 dark:text-violet-400 dark:bg-violet-950/20',
+        title: `New RFQ Sourcing Event: ${newRfq.id}`,
+        body: `Sourcing Request for "${newRfq.title}" has been published. Category: ${newRfq.category}. Deadline: ${newRfq.deadline}.`,
+        time: 'Just now',
+        read: false,
+        type: 'Business'
+      };
+      localStorage.setItem('srm_notifications', JSON.stringify([newNotif, ...notifsList]));
+      window.dispatchEvent(new Event('srm_notifications_updated'));
+    } catch (err) {
+      console.warn('Failed to save RFQ notification', err);
+    }
+
     fetch(`${apiBaseUrl}/rfqs.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
