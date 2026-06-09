@@ -38,13 +38,17 @@ A state-of-the-art procurement lifecycle platform connecting **Suppliers** and *
 
 The portal utilizes a cutting-edge **split-pane glassmorphism design system** featuring vibrant, high-fidelity HSL gradients, organic light-fog glow effects, and complex SVG/motion-driven visualizations.
 
-| Role Selection | Login Portal |
+| Role Selection | Register Wizard |
 | :---: | :---: |
-| ![Role Selection](SRM_PROJECT/public/images/role-selection.png) | ![Login](SRM_PROJECT/public/images/login.png) |
+| ![Role Selection](SRM_PROJECT/public/images/role-selection.png) | ![Register](SRM_PROJECT/public/images/register.png) |
 
-| Supplier Dashboard | Admin Dashboard |
+| Supplier Login | Admin Login |
 | :---: | :---: |
-| ![Supplier](SRM_PROJECT/public/images/supplier.png) | ![Admin](SRM_PROJECT/public/images/admin.png) |
+| ![Supplier Login](SRM_PROJECT/public/images/supplier-login.png) | ![Admin Login](SRM_PROJECT/public/images/admin-login.png) |
+
+| Supplier Console Dashboard | Admin Command Center |
+| :---: | :---: |
+| ![Supplier Dashboard](SRM_PROJECT/public/images/supplier-dashboard.png) | ![Admin Dashboard](SRM_PROJECT/public/images/admin-dashboard.png) |
 
 ---
 
