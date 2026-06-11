@@ -1,8 +1,18 @@
-import { Bell, Menu, Search, ShieldCheck } from 'lucide-react';
+import { Bell, Menu, Search } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from './Button.jsx';
 import ThemeToggle from '../../Theme.jsx';
 import { useState, useEffect } from 'react';
+import { getNotifications, NOTIFICATION_EVENT } from '../utils/notificationStore.js';
+
+function getSessionRole() {
+  try {
+    const user = JSON.parse(sessionStorage.getItem('srm_user') || '{}');
+    return user?.role || 'admin';
+  } catch {
+    return 'admin';
+  }
+}
 
 export function Navbar({ title, onMenu }) {
   const location = useLocation();
@@ -10,28 +20,18 @@ export function Navbar({ title, onMenu }) {
 
   useEffect(() => {
     const updateCount = () => {
-      try {
-        const saved = localStorage.getItem('srm_notifications');
-        const list = saved ? JSON.parse(saved) : [];
-        if (Array.isArray(list)) {
-          const count = list.filter(n => n && !n.read && !n.is_read).length;
-          setUnreadCount(count);
-        } else {
-          setUnreadCount(0);
-        }
-      } catch (err) {
-        console.warn('Failed to parse notifications in Navbar:', err);
-        setUnreadCount(0);
-      }
+      const role = getSessionRole();
+      const list = getNotifications(role);
+      setUnreadCount(list.filter(n => n && !n.read && !n.is_read).length);
     };
 
     updateCount();
     window.addEventListener('storage', updateCount);
-    window.addEventListener('srm_notifications_updated', updateCount);
+    window.addEventListener(NOTIFICATION_EVENT, updateCount);
 
     return () => {
       window.removeEventListener('storage', updateCount);
-      window.removeEventListener('srm_notifications_updated', updateCount);
+      window.removeEventListener(NOTIFICATION_EVENT, updateCount);
     };
   }, []);
 

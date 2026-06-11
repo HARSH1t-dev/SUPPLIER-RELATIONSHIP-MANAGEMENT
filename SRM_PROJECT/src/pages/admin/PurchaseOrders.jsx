@@ -6,6 +6,7 @@ import { DataTable } from '../../components/DataTable.jsx';
 import { PageHeader } from '../../components/PageHeader.jsx';
 import { StatusBadge } from '../../components/StatusBadge.jsx';
 import { currency } from '../../utils/formatters.js';
+import { CustomNotification } from '../../components/CustomNotification.jsx';
 
 export function PurchaseOrders() {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
@@ -23,6 +24,9 @@ export function PurchaseOrders() {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState('');
   const [submitError, setSubmitError] = useState('');
+
+  const [customAlert, setCustomAlert] = useState({ isOpen: false, type: 'success', title: '', message: '' });
+  const showAlert = (title, message, type = 'success') => setCustomAlert({ isOpen: true, type, title, message });
 
   const storedUser = sessionStorage.getItem('srm_user');
   const currentUser = storedUser ? JSON.parse(storedUser) : { id: 1, full_name: 'Admin User' };
@@ -79,18 +83,16 @@ export function PurchaseOrders() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
-          alert(`PO status successfully updated to: ${status.toUpperCase()}`);
-          // Refetch single detail
+          showAlert('Status Updated', `PO status successfully updated to: ${status.toUpperCase()}`, 'success');
           handleInspectPo(poDetails.id);
-          // Refetch list
           fetchOrders();
         } else {
-          alert('Failed to update status: ' + data.message);
+          showAlert('Update Failed', 'Failed to update status: ' + data.message, 'error');
         }
       })
       .catch((err) => {
         console.error(err);
-        alert('An error occurred while updating PO status.');
+        showAlert('Error', 'An error occurred while updating PO status.', 'error');
       });
   };
 
@@ -523,6 +525,14 @@ export function PurchaseOrders() {
           </div>
         </div>
       )}
+
+      <CustomNotification
+        isOpen={customAlert.isOpen}
+        type={customAlert.type}
+        title={customAlert.title}
+        message={customAlert.message}
+        onClose={() => setCustomAlert(a => ({ ...a, isOpen: false }))}
+      />
     </>
   );
 }

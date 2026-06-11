@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, FileText, ShoppingCart, Star, AlertTriangle, CheckCircle, Info, FileCheck, MessageSquare, ArrowRightLeft, X } from 'lucide-react';
+import { getNotifications, markRead, NOTIFICATION_EVENT } from '../utils/notificationStore.js';
 
 const iconMap = {
   Bell,
@@ -16,6 +17,15 @@ const iconMap = {
   ArrowRightLeft
 };
 
+function getSessionRole() {
+  try {
+    const user = JSON.parse(sessionStorage.getItem('srm_user') || '{}');
+    return user?.role || 'admin';
+  } catch {
+    return 'admin';
+  }
+}
+
 export function ToastContainer() {
   const [toasts, setToasts] = useState([]);
   const navigate = useNavigate();
@@ -23,39 +33,23 @@ export function ToastContainer() {
   const knownIdsRef = useRef(new Set());
   const isInitializedRef = useRef(false);
 
-  const getNotificationsFromStorage = () => {
-    try {
-      const saved = localStorage.getItem('srm_notifications');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed.filter(Boolean);
-        }
-      }
-    } catch (err) {
-      console.warn('Failed to parse notifications in ToastContainer:', err);
-    }
-    return [];
-  };
-
   const syncNotifications = () => {
-    const currentList = getNotificationsFromStorage();
-    
+    const role = getSessionRole();
+    const currentList = getNotifications(role);
+
     if (!isInitializedRef.current) {
-      // First mount: just populate known IDs
-      const initialIds = new Set(currentList.map(n => n.id));
-      knownIdsRef.current = initialIds;
+      // First mount: just populate known IDs — don't pop old toasts
+      knownIdsRef.current = new Set(currentList.map(n => n.id));
       isInitializedRef.current = true;
       return;
     }
 
-    // Subsequent updates: check for new unread notifications
+    // Subsequent updates: only show truly new unread notifications
     const newToasts = [];
     currentList.forEach(notif => {
       if (notif && !knownIdsRef.current.has(notif.id)) {
         knownIdsRef.current.add(notif.id);
-        const isRead = notif.read || notif.is_read;
-        if (!isRead) {
+        if (!notif.read && !notif.is_read) {
           newToasts.push(notif);
         }
       }
@@ -67,21 +61,22 @@ export function ToastContainer() {
   };
 
   useEffect(() => {
-    // Initial sync to set baseline of known IDs
     syncNotifications();
 
     const handleStorageChange = (e) => {
-      if (e.key === 'srm_notifications' || !e.key) {
+      const role = getSessionRole();
+      const watchKey = role === 'admin' ? 'srm_notifications_admin' : 'srm_notifications_supplier';
+      if (e.key === watchKey || !e.key) {
         syncNotifications();
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('srm_notifications_updated', syncNotifications);
+    window.addEventListener(NOTIFICATION_EVENT, syncNotifications);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('srm_notifications_updated', syncNotifications);
+      window.removeEventListener(NOTIFICATION_EVENT, syncNotifications);
     };
   }, []);
 
@@ -92,17 +87,7 @@ export function ToastContainer() {
   const handleToastClick = (toast) => {
     const isAdmin = location.pathname.startsWith('/admin') || window.location.hash.startsWith('#/admin');
     const notificationsLink = isAdmin ? '/admin/notifications' : '/supplier/notifications';
-    
-    // Mark as read in local storage
-    try {
-      const currentList = getNotificationsFromStorage();
-      const updated = currentList.map(n => n.id === toast.id ? { ...n, read: true, is_read: true } : n);
-      localStorage.setItem('srm_notifications', JSON.stringify(updated));
-      window.dispatchEvent(new Event('srm_notifications_updated'));
-    } catch (err) {
-      console.warn('Failed to mark toast as read on click:', err);
-    }
-
+    markRead(toast.id);
     removeToast(toast.id);
     navigate(notificationsLink);
   };
@@ -170,7 +155,7 @@ export function ToastContainer() {
                 <X className="h-4 w-4" />
               </button>
 
-              {/* Auto dismissal timer helper */}
+              {/* Auto dismissal timer */}
               <ToastTimer duration={5000} onDismiss={() => removeToast(toast.id)} />
             </motion.div>
           );
@@ -199,3 +184,4 @@ function ToastTimer({ duration, onDismiss }) {
     </div>
   );
 }
+

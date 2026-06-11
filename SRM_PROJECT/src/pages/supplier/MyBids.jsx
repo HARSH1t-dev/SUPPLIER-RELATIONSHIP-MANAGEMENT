@@ -11,6 +11,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Plus, Check, UploadCloud, FileText, Send, ArrowLeftRight, Loader2, ClipboardList, Package, Calendar, IndianRupee, Tag, Info, AlertCircle, MessageSquare } from 'lucide-react';
 import { CustomNotification } from '../../components/CustomNotification.jsx';
+import { pushNotification } from '../../utils/notificationStore.js';
 
 const initialForm = {
   rfqPackage: 'RFQ-24061',
@@ -315,32 +316,15 @@ export function MyBids() {
     setBidsList(updated);
     localStorage.setItem('srm_bids', JSON.stringify(updated));
 
-    // Create Sourcing Notification for new Bid submission
-    try {
-      const savedNotifs = localStorage.getItem('srm_notifications');
-      let notifsList = [];
-      if (savedNotifs) {
-        const parsed = JSON.parse(savedNotifs);
-        if (Array.isArray(parsed)) {
-          notifsList = parsed.filter(Boolean);
-        }
-      }
-      const newNotif = {
-        id: Date.now(),
-        category: 'sourcing',
-        icon: 'FileText',
-        iconColor: 'text-violet-600 bg-violet-50 dark:text-violet-400 dark:bg-violet-950/20',
-        title: `New Bid Submitted: ${newBid.id}`,
-        body: `Supplier "${newBid.supplierName}" has submitted a proposal for ${newBid.rfqPackage}. Quoted Value: ${currency(newBid.price)}.`,
-        time: 'Just now',
-        read: false,
-        type: 'Business'
-      };
-      localStorage.setItem('srm_notifications', JSON.stringify([newNotif, ...notifsList]));
-      window.dispatchEvent(new Event('srm_notifications_updated'));
-    } catch (err) {
-      console.warn('Failed to save Bid notification', err);
-    }
+    // Notify admin that a bid has been submitted
+    pushNotification({
+      category: 'sourcing',
+      icon: 'FileText',
+      iconColor: 'text-violet-600 bg-violet-50 dark:text-violet-400 dark:bg-violet-950/20',
+      title: `New Bid: ${newBid.id}`,
+      body: `"${newBid.supplierName}" submitted a proposal for ${newBid.rfqPackage}. Quoted: ${currency(newBid.price)}.`,
+      type: 'Bid',
+    }, 'admin');
 
     fetch(`${apiBaseUrl}/bids.php`, {
       method: 'POST',

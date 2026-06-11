@@ -10,6 +10,8 @@ import { useDisclosure } from '../../hooks/useDisclosure.js';
 import { currency } from '../../utils/formatters.js';
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { pushNotification } from '../../utils/notificationStore.js';
+import { CustomNotification } from '../../components/CustomNotification.jsx';
 
 const mockInvoices = [
   { id: 'INV-5401', po: 'PO-88021', amount: 218000, submitted: '2026-05-20', due: '2026-06-04', status: 'Submitted', quantity: 2500 },
@@ -54,6 +56,9 @@ export function SupplierInvoices() {
     due: '',
     quantity: ''
   });
+
+  const [customAlert, setCustomAlert] = useState({ isOpen: false, type: 'success', title: '', message: '' });
+  const showAlert = (title, message, type = 'success') => setCustomAlert({ isOpen: true, type, title, message });
 
   useEffect(() => {
     fetch(`${apiBaseUrl}/purchase_orders.php`)
@@ -207,42 +212,27 @@ export function SupplierInvoices() {
         setInvoicesList(updatedList);
         localStorage.setItem('srm_invoices', JSON.stringify(updatedList));
 
-        let listNotifs = [];
-        try {
-          const savedNotifs = localStorage.getItem('srm_notifications');
-          if (savedNotifs) {
-            const parsed = JSON.parse(savedNotifs);
-            if (Array.isArray(parsed)) {
-              listNotifs = parsed.filter(Boolean);
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to parse notifications in Invoices.jsx', e);
-        }
-        const newNotif = {
+        // Notify admin about the invoice resubmission
+        pushNotification({
           id: 'notif-' + Date.now(),
           title: 'Invoice Resubmitted',
-          description: `Invoice ${correctingInvoice.id} for PO ${correctingInvoice.po} was corrected and resubmitted for review.`,
-          time: 'Just now',
-          type: 'invoice',
+          body: `Invoice ${correctingInvoice.id} for ${correctingInvoice.po} was corrected and resubmitted.`,
+          type: 'Invoice',
           iconName: 'FileCheck',
-          is_read: false
-        };
-        localStorage.setItem('srm_notifications', JSON.stringify([newNotif, ...listNotifs]));
-        window.dispatchEvent(new Event('srm_notifications_updated'));
+        }, 'admin');
 
-        alert(`Invoice ${correctingInvoice.id} has been corrected and resubmitted successfully.`);
+        showAlert('Invoice Resubmitted', `Invoice ${correctingInvoice.id} has been corrected and resubmitted successfully.`, 'success');
         correctInvoiceModal.close();
         setCorrectingInvoice(null);
       } else {
-        alert('Failed to resubmit invoice: ' + (response.message || 'Unknown error'));
+        showAlert('Resubmission Failed', 'Failed to resubmit invoice: ' + (response.message || 'Unknown error'), 'error');
       }
     } catch (err) {
       console.error('Failed to resubmit invoice:', err);
       const updatedList = invoicesList.map(inv => inv.id === correctingInvoice.id ? updatedInvoice : inv);
       setInvoicesList(updatedList);
       localStorage.setItem('srm_invoices', JSON.stringify(updatedList));
-      alert(`Updated locally: Invoice ${correctingInvoice.id} corrected and resubmitted.`);
+      showAlert('Updated Locally', `Invoice ${correctingInvoice.id} corrected and resubmitted.`, 'success');
       correctInvoiceModal.close();
       setCorrectingInvoice(null);
     } finally {
@@ -344,7 +334,7 @@ export function SupplierInvoices() {
 
     setSelectedInvoice(updatedInvoice);
     setSubmittingInvoice(false);
-    alert(`Invoice ${invoice.id} submitted to Finance successfully.`);
+    showAlert('Invoice Submitted', `Invoice ${invoice.id} has been submitted to Finance successfully.`, 'success');
   };
 
   const updateForm = (field, value) => {
@@ -936,6 +926,14 @@ export function SupplierInvoices() {
           })()}
         </Modal>
       )}
+
+      <CustomNotification
+        isOpen={customAlert.isOpen}
+        type={customAlert.type}
+        title={customAlert.title}
+        message={customAlert.message}
+        onClose={() => setCustomAlert(a => ({ ...a, isOpen: false }))}
+      />
     </div>
   );
 }

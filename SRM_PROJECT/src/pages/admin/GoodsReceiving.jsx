@@ -14,6 +14,8 @@ import { FormField, inputClass } from '../../components/FormField.jsx';
 import { useDisclosure } from '../../hooks/useDisclosure.js';
 import { receiving as mockReceiving } from '../../data/mockData.js';
 import { number, currency } from '../../utils/formatters.js';
+import { pushNotification } from '../../utils/notificationStore.js';
+import { CustomNotification } from '../../components/CustomNotification.jsx';
 
 const initialForm = {
   receipt: '',
@@ -33,6 +35,10 @@ export function GoodsReceiving() {
   // Success screen state
   const [grnSuccessData, setGrnSuccessData] = useState(null);
   const [selectedPoForGrn, setSelectedPoForGrn] = useState(null);
+
+  // Custom alert state
+  const [customAlert, setCustomAlert] = useState({ isOpen: false, type: 'success', title: '', message: '' });
+  const showAlert = (title, message, type = 'success') => setCustomAlert({ isOpen: true, type, title, message });
 
   // Core Data Lists
   const [receiptsList, setReceiptsList] = useState([]);
@@ -373,32 +379,15 @@ export function GoodsReceiving() {
       console.error('Failed to update PO status / tracking timeline:', err);
     }
 
-    // 3. Create Supplier notification
-    try {
-      const savedNotifs = localStorage.getItem('srm_notifications');
-      let notifsList = [];
-      if (savedNotifs) {
-        const parsed = JSON.parse(savedNotifs);
-        if (Array.isArray(parsed)) {
-          notifsList = parsed.filter(Boolean);
-        }
-      }
-      const newNotif = {
-        id: Date.now(),
-        category: 'orders',
-        icon: 'CheckCircle',
-        iconColor: 'text-emerald-600 bg-emerald-50',
-        title: `Receipt Verified — ${form.po}`,
-        body: `Accepted Quantity: ${totalAccepted}. Rejected Quantity: ${totalRejected}. You may now generate an invoice.`,
-        time: 'Just now',
-        read: false,
-        type: 'Business'
-      };
-      localStorage.setItem('srm_notifications', JSON.stringify([newNotif, ...notifsList]));
-      window.dispatchEvent(new Event('srm_notifications_updated'));
-    } catch (err) {
-      console.warn('Failed to save supplier notification', err);
-    }
+    // Notify supplier that their delivery was verified and they can now invoice
+    pushNotification({
+      category: 'orders',
+      icon: 'CheckCircle',
+      iconColor: 'text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/20',
+      title: `GRN Recorded — ${form.po}`,
+      body: `Accepted: ${totalAccepted} units. Rejected: ${totalRejected} units. You may now submit an invoice.`,
+      type: 'Orders',
+    }, 'supplier');
 
     setGrnSuccessData({
       receipt: newReceipt.receipt,
@@ -840,10 +829,12 @@ export function GoodsReceiving() {
               </Button>
               <Button 
                 variant="secondary"
-                onClick={(e) => {
-                  e.target.disabled = true;
-                  e.target.innerText = '✓ Supplier Notified';
-                  alert('Supplier notified of receipt validation via live portal alert!');
+                onClick={() => {
+                  showAlert(
+                    'Supplier Notified',
+                    `Receipt validation for ${grnSuccessData?.po} has been sent to the supplier via the live portal.`,
+                    'success'
+                  );
                 }}
               >
                 Notify Supplier
@@ -1129,6 +1120,14 @@ export function GoodsReceiving() {
           </form>
         </Modal>
       )}
+
+      <CustomNotification
+        isOpen={customAlert.isOpen}
+        type={customAlert.type}
+        title={customAlert.title}
+        message={customAlert.message}
+        onClose={() => setCustomAlert(a => ({ ...a, isOpen: false }))}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { StatusBadge } from '../../components/StatusBadge.jsx';
 import { Modal } from '../../components/Modal.jsx';
 import { useDisclosure } from '../../hooks/useDisclosure.js';
 import { useState, useEffect, useMemo } from 'react';
+import { CustomNotification } from '../../components/CustomNotification.jsx';
 
 export function SupplierProfile() {
   const currentUser = useMemo(() => {
@@ -18,6 +19,8 @@ export function SupplierProfile() {
       return null;
     }
   }, []);
+
+  const [customAlert, setCustomAlert] = useState({ isOpen: false, type: 'info', title: '', message: '' });
 
   const [docsList, setDocsList] = useState(() => {
     const saved = localStorage.getItem('srm_compliance_docs');
@@ -170,7 +173,12 @@ export function SupplierProfile() {
     if (!currentUser?.id) return;
     
     if (currentUser.id === 1) {
-      alert("Cannot delete the system super admin account.");
+      setCustomAlert({
+        isOpen: true,
+        type: 'error',
+        title: 'Action Denied',
+        message: 'Cannot delete the system super admin account.'
+      });
       return;
     }
 
@@ -198,15 +206,32 @@ export function SupplierProfile() {
       const data = await response.json();
       
       if (response.ok && data.success) {
-        alert("Your account has been deleted successfully. You will now be redirected to the login page.");
-        sessionStorage.removeItem('srm_user');
-        window.location.hash = '#/login';
+        setCustomAlert({
+          isOpen: true,
+          type: 'success',
+          title: 'Account Deleted',
+          message: 'Your account has been deleted successfully. You will now be redirected to the login page.',
+          onClose: () => {
+            sessionStorage.removeItem('srm_user');
+            window.location.hash = '#/login';
+          }
+        });
       } else {
-        alert(data.message || "Failed to delete account. Please try again.");
+        setCustomAlert({
+          isOpen: true,
+          type: 'error',
+          title: 'Error Deleting Account',
+          message: data.message || 'Failed to delete account. Please try again.'
+        });
       }
     } catch (err) {
       console.error(err);
-      alert("A network error occurred while attempting to delete your account. Please try again.");
+      setCustomAlert({
+        isOpen: true,
+        type: 'error',
+        title: 'Network Error',
+        message: 'A network error occurred while attempting to delete your account. Please try again.'
+      });
     }
   };
 
@@ -448,6 +473,19 @@ export function SupplierProfile() {
           </div>
         </div>
       </Card>
+
+      <CustomNotification
+        isOpen={customAlert.isOpen}
+        type={customAlert.type}
+        title={customAlert.title}
+        message={customAlert.message}
+        onClose={() => {
+          if (customAlert.onClose) {
+            customAlert.onClose();
+          }
+          setCustomAlert(a => ({ ...a, isOpen: false }));
+        }}
+      />
     </div>
   );
 }

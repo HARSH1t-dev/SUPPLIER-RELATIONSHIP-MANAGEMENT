@@ -10,6 +10,7 @@ import { StatusBadge } from '../../components/StatusBadge.jsx';
 import { currency } from '../../utils/formatters.js';
 import { getApiBaseUrl } from '../../utils/apiBase.js';
 import { nextSupplierAction, trackingStatusLabel } from '../../utils/orderTracking.js';
+import { CustomNotification } from '../../components/CustomNotification.jsx';
 
 function getSupplierUser() {
   try {
@@ -31,6 +32,7 @@ export function SupplierOrders() {
   const [poDetails, setPoDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [customAlert, setCustomAlert] = useState({ isOpen: false, type: 'info', title: '', message: '' });
 
   const apiBaseUrl = getApiBaseUrl();
   const currentUser = getSupplierUser();
@@ -118,10 +120,22 @@ export function SupplierOrders() {
           }
           fetchSupplierOrders();
         } else {
-          alert(data.message || 'Failed to update tracking');
+          setCustomAlert({
+            isOpen: true,
+            type: 'error',
+            title: 'Fulfillment Update Failed',
+            message: data.message || 'Failed to update tracking'
+          });
         }
       })
-      .catch(() => alert('Failed to update order tracking.'))
+      .catch(() => {
+        setCustomAlert({
+          isOpen: true,
+          type: 'error',
+          title: 'Update Error',
+          message: 'Failed to update order tracking.'
+        });
+      })
       .finally(() => setActionLoading(false));
   };
 
@@ -270,11 +284,23 @@ export function SupplierOrders() {
       setInvoices(updatedInvoices);
       localStorage.setItem('srm_invoices', JSON.stringify(updatedInvoices));
 
-      alert(`Draft invoice ${invoiceId} generated successfully!`);
-      navigate('/supplier/invoices', { state: { openInvoiceId: invoiceId } });
+      setCustomAlert({
+        isOpen: true,
+        type: 'success',
+        title: 'Invoice Generated',
+        message: `Draft invoice ${invoiceId} generated successfully!`,
+        onClose: () => {
+          navigate('/supplier/invoices', { state: { openInvoiceId: invoiceId } });
+        }
+      });
     } catch (err) {
       console.error(err);
-      alert('Error generating invoice');
+      setCustomAlert({
+        isOpen: true,
+        type: 'error',
+        title: 'Generation Failed',
+        message: 'Error generating invoice'
+      });
     } finally {
       setActionLoading(false);
     }
@@ -508,6 +534,19 @@ export function SupplierOrders() {
           </div>
         </div>
       )}
+
+      <CustomNotification
+        isOpen={customAlert.isOpen}
+        type={customAlert.type}
+        title={customAlert.title}
+        message={customAlert.message}
+        onClose={() => {
+          if (customAlert.onClose) {
+            customAlert.onClose();
+          }
+          setCustomAlert(a => ({ ...a, isOpen: false }));
+        }}
+      />
     </>
   );
 }
