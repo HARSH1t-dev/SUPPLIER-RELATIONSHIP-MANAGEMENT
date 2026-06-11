@@ -294,13 +294,13 @@ export function RFQManagement() {
           <Card className="p-5 flex flex-col shrink-0">
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-3">Sourcing Overview</h3>
             <div className="grid grid-cols-2 gap-3 text-center">
-              <div className="bg-slate-50 dark:bg-[#0f172a]/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800/80">
+              <div className="bg-slate-50 dark:bg-slate-950/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800/80">
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Active Events</span>
                 <span className="text-lg font-bold text-slate-850 dark:text-slate-200 mt-1 block">
                   {rfqList.filter(r => r.status === 'Active' || r.status === 'Under Evaluation').length}
                 </span>
               </div>
-              <div className="bg-slate-50 dark:bg-[#0f172a]/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800/80">
+              <div className="bg-slate-50 dark:bg-slate-950/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800/80">
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Target Value</span>
                 <span className="text-sm font-bold text-brand-600 dark:text-brand-400 mt-2 block truncate">
                   {currency(rfqList.reduce((acc, curr) => acc + (curr.value || 0), 0))}

@@ -371,13 +371,13 @@ export function SupplierRFQs() {
           <Card className="p-5 flex flex-col shrink-0">
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-3">Sourcing Progress</h3>
             <div className="grid grid-cols-2 gap-3 text-center">
-              <div className="bg-slate-50 dark:bg-[#0f172a]/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800/80">
+              <div className="bg-slate-50 dark:bg-slate-950/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800/80">
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Submitted Bids</span>
                 <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-1 block">
                   {submittedCount} / {totalInvitations}
                 </span>
               </div>
-              <div className="bg-slate-50 dark:bg-[#0f172a]/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800/80">
+              <div className="bg-slate-50 dark:bg-slate-950/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800/80">
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Pending Quotes</span>
                 <span className="text-lg font-bold text-amber-600 dark:text-amber-400 mt-1 block">
                   {pendingCount}

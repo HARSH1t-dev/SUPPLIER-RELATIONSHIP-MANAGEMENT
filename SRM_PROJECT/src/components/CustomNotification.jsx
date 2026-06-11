@@ -34,7 +34,7 @@ export function CustomNotification({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 backdrop-blur-md p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-md rounded-2xl border border-white/20 dark:border-[#1e293b]/70 bg-white/80 dark:bg-[#0f172a]/90 backdrop-blur-xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 text-slate-800 dark:text-slate-100 font-sans">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/95 backdrop-blur-xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 text-slate-800 dark:text-slate-100 font-sans">
         
         {/* Render Icon based on Type */}
         <div className="flex flex-col items-center text-center">
@@ -80,7 +80,7 @@ export function CustomNotification({
           )}
 
           {/* Buttons Layout */}
-          <div className="flex justify-end gap-3 border-t border-slate-100 dark:border-slate-850 pt-4 mt-6">
+          <div className="flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800 pt-4 mt-6">
             {(type === 'confirm' || type === 'prompt') ? (
               <>
                 <button

@@ -1,310 +1,368 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  FileText, GitCompare, ShoppingCart, PackageOpen, ReceiptText, 
-  Users, AlertTriangle, Star, Clock, ArrowRight, Activity, Bell
-} from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowRight, BarChart3, CheckCircle2, FileText, GitCompare, ShieldCheck, ShoppingCart, Sparkles, Truck, Users } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardHeader } from '../../components/Card.jsx';
-import { PageHeader } from '../../components/PageHeader.jsx';
-import { currency } from '../../utils/formatters.js';
+import { OrdersChart, RfqPieChart, SpendChart } from '../../components/Charts.jsx';
+import { activity, orderSummary, procurementSpend, rfqActivity, rfqs as seedRfqs, suppliers } from '../../data/mockData.js';
+import { getNotifications, NOTIFICATION_EVENT } from '../../utils/notificationStore.js';
+import { getStoredRfqs, mergeRfqLists, RFQ_EVENT, saveStoredRfqs } from '../../utils/rfqStore.js';
 
-export function AdminDashboard() {
-  const [stats, setStats] = useState({
-    activeRfqs: 3,
-    openBids: 8,
-    awardedContracts: 4,
-    pendingGrns: 2,
-    receiptsToday: 3,
-    varianceCount: 1,
-    pendingInvoices: 2,
-    processingPayments: 1,
-    overduePayments: 0,
-    avgRating: 4.5,
-    topSupplier: 'Apex Industrial Components',
-    riskSuppliers: 1,
-    pendingReceiptsCount: 3
+const statIcons = [BarChart3, Users, FileText, Truck];
+const quickActions = [
+  { label: 'Launch RFQ', detail: 'Create sourcing event', to: '/admin/rfqs', icon: FileText, tone: 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300' },
+  { label: 'Compare Bids', detail: 'Award with confidence', to: '/admin/bids', icon: GitCompare, tone: 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-300' },
+  { label: 'Review Orders', detail: 'Track fulfillment', to: '/admin/orders', icon: ShoppingCart, tone: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300' },
+  { label: 'Governance', detail: 'Audit system activity', to: '/admin/audit-logs', icon: ShieldCheck, tone: 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300' },
+];
+
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 18 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 90, damping: 16 } },
+};
+
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1/SUPPLIER-RELATIONSHIP-MANAGEMENT/SRM_PROJECT/backend/api').replace(/\/$/, '');
+
+const moneyCompact = (value) =>
+  new Intl.NumberFormat('en-IN', {
+    currency: 'INR',
+    maximumFractionDigits: 1,
+    notation: 'compact',
+    style: 'currency',
+  }).format(value || 0);
+
+const statusText = (status = '') => String(status).toLowerCase();
+
+function buildRfqStatusData(rfqList) {
+  const counts = rfqList.reduce((acc, rfq) => {
+    const status = rfq.status || 'Draft';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {});
+  const data = Object.entries(counts).map(([name, value]) => ({ name, value }));
+  return data.length ? data : rfqActivity;
+}
+
+function buildOrderTrendData(purchaseOrders) {
+  if (!purchaseOrders.length) return orderSummary;
+
+  return purchaseOrders.slice(0, 4).map((po, index) => ({
+    week: `W${index + 1}`,
+    created: 1,
+    fulfilled: ['delivered', 'fulfilled'].includes(statusText(po.status)) ? 1 : 0,
+  }));
+}
+
+function buildSpendData(rfqList, purchaseOrders) {
+  const source = rfqList.length ? rfqList : seedRfqs;
+  const grouped = source.slice(0, 6).map((rfq, index) => {
+    const value = Number(rfq.value || 0) / 100000;
+    return {
+      month: rfq.deadline ? new Date(rfq.deadline).toLocaleString('en-US', { month: 'short' }) : `P${index + 1}`,
+      direct: Number((value * 0.52).toFixed(1)),
+      indirect: Number((value * 0.28).toFixed(1)),
+      services: Number((value * 0.2).toFixed(1)),
+    };
   });
 
-  const [recentActivities, setRecentActivities] = useState([
-    { id: 1, text: 'RFQ-2026-0012 published under Mechanical category', time: '10 mins ago', type: 'rfq' },
-    { id: 2, text: 'New bid proposal received from Delta Precision Parts', time: '45 mins ago', type: 'bid' },
-    { id: 3, text: 'PO-2026-0011 issued to Apex Industrial Components', time: '2 hrs ago', type: 'po' },
-    { id: 4, text: 'Warehouse logged GRN REC-5840 for PO-88021', time: '3 hrs ago', type: 'grn' },
-    { id: 5, text: 'Supplier commercial invoice INV-2026-0001 submitted', time: '5 hrs ago', type: 'invoice' },
-    { id: 6, text: 'Outbound payment completed for Invoice INV-5398', time: 'Yesterday', type: 'payment' }
-  ]);
+  if (grouped.length) return grouped;
 
-  const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1/SUPPLIER-RELATIONSHIP-MANAGEMENT/SRM_PROJECT/backend/api').replace(/\/$/, '');
+  if (purchaseOrders.length) {
+    return purchaseOrders.slice(0, 6).map((po, index) => {
+      const value = Number(po.total_amount || po.amount || 0) / 100000;
+      return {
+        month: po.order_date ? new Date(po.order_date).toLocaleString('en-US', { month: 'short' }) : `P${index + 1}`,
+        direct: Number((value * 0.6).toFixed(1)),
+        indirect: Number((value * 0.25).toFixed(1)),
+        services: Number((value * 0.15).toFixed(1)),
+      };
+    });
+  }
+
+  return procurementSpend;
+}
+
+export function AdminDashboard() {
+  const [rfqs, setRfqs] = useState(() => getStoredRfqs());
+  const [bids, setBids] = useState([]);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [notifications, setNotifications] = useState(() => getNotifications());
 
   useEffect(() => {
-    // Attempt dynamic stats count if server is active
-    Promise.all([
-      fetch(`${apiBaseUrl}/rfqs.php`).then(res => res.json()).catch(() => null),
-      fetch(`${apiBaseUrl}/bids.php`).then(res => res.json()).catch(() => null),
-      fetch(`${apiBaseUrl}/purchase_orders.php`).then(res => res.json()).catch(() => null),
-      fetch(`${apiBaseUrl}/invoices.php`).then(res => res.json()).catch(() => null),
-      fetch(`${apiBaseUrl}/ratings.php`).then(res => res.json()).catch(() => null),
-      fetch(`${apiBaseUrl}/receipts.php`).then(res => res.json()).catch(() => null)
-    ]).then(([rfqsData, bidsData, posData, invsData, ratsData, recsData]) => {
-      let updated = { ...stats };
-      if (rfqsData && Array.isArray(rfqsData.rfqs)) {
-        updated.activeRfqs = rfqsData.rfqs.filter(r => r.status === 'Active' || r.status === 'Under Evaluation').length;
-      }
-      if (bidsData && Array.isArray(bidsData.bids)) {
-        updated.openBids = bidsData.bids.length;
-      }
-      if (posData && Array.isArray(posData.purchase_orders)) {
-        updated.awardedContracts = posData.purchase_orders.filter(p => p.status === 'fulfilled' || p.status === 'delivered').length;
-        updated.pendingGrns = posData.purchase_orders.filter(p => p.status === 'shipped').length;
-        updated.pendingReceiptsCount = posData.purchase_orders.filter(p => p.status === 'awaiting_receipt').length;
-      }
-      if (invsData && Array.isArray(invsData.invoices)) {
-        updated.pendingInvoices = invsData.invoices.filter(i => i.status === 'Submitted' || i.status === 'Under Review').length;
-        updated.processingPayments = invsData.invoices.filter(i => i.status === 'Approved' || i.status === 'Payment Processing').length;
-      }
-      if (ratsData && Array.isArray(ratsData.suppliers)) {
-        const sum = ratsData.suppliers.reduce((s, x) => s + x.rating, 0);
-        updated.avgRating = ratsData.suppliers.length > 0 ? Number((sum / ratsData.suppliers.length).toFixed(1)) : 4.5;
-        updated.topSupplier = ratsData.suppliers[0]?.name || 'Apex Industrial Components';
-        updated.riskSuppliers = ratsData.suppliers.filter(x => x.feasibility_score < 80).length;
-      }
-      if (recsData && Array.isArray(recsData.receipts)) {
-        updated.receiptsToday = recsData.receipts.length;
-        updated.varianceCount = recsData.receipts.filter(r => r.received > r.accepted).length;
-      }
-      setStats(updated);
-    }).catch(err => console.warn('Offline mode for dashboard KPIs:', err));
-  }, [apiBaseUrl]);
+    const refreshNotifications = () => setNotifications(getNotifications());
+    const refreshRfqs = () => setRfqs(getStoredRfqs());
+    window.addEventListener(NOTIFICATION_EVENT, refreshNotifications);
+    window.addEventListener(RFQ_EVENT, refreshRfqs);
+    window.addEventListener('storage', refreshNotifications);
 
-  const getActivityIcon = (type) => {
-    switch (type) {
-      case 'rfq': return <FileText className="h-4 w-4 text-violet-600" />;
-      case 'bid': return <GitCompare className="h-4 w-4 text-sky-600" />;
-      case 'po': return <ShoppingCart className="h-4 w-4 text-emerald-600" />;
-      case 'grn': return <PackageOpen className="h-4 w-4 text-blue-600" />;
-      case 'invoice': return <ReceiptText className="h-4 w-4 text-amber-600" />;
-      default: return <Activity className="h-4 w-4 text-slate-600" />;
-    }
-  };
+    return () => {
+      window.removeEventListener(NOTIFICATION_EVENT, refreshNotifications);
+      window.removeEventListener(RFQ_EVENT, refreshRfqs);
+      window.removeEventListener('storage', refreshNotifications);
+    };
+  }, []);
 
-  const getActivityBg = (type) => {
-    switch (type) {
-      case 'rfq': return 'bg-violet-50 dark:bg-violet-950/20';
-      case 'bid': return 'bg-sky-50 dark:bg-sky-950/20';
-      case 'po': return 'bg-emerald-50 dark:bg-emerald-950/20';
-      case 'grn': return 'bg-blue-50 dark:bg-blue-950/20';
-      case 'invoice': return 'bg-amber-50 dark:bg-amber-950/20';
-      default: return 'bg-slate-100 dark:bg-slate-800';
-    }
-  };
+  useEffect(() => {
+    setRfqs(getStoredRfqs());
+
+    fetch(`${apiBaseUrl}/rfqs.php`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.rfqs)) {
+          const mergedRfqs = mergeRfqLists(data.rfqs);
+          setRfqs(mergedRfqs);
+          saveStoredRfqs(mergedRfqs);
+        }
+      })
+      .catch(() => setRfqs(getStoredRfqs()));
+
+    fetch(`${apiBaseUrl}/bids.php`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.bids)) setBids(data.bids);
+      })
+      .catch(() => {
+        try {
+          setBids(JSON.parse(localStorage.getItem('srm_bids') || '[]'));
+        } catch {
+          setBids([]);
+        }
+      });
+
+    fetch(`${apiBaseUrl}/purchase_orders.php`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.purchase_orders)) setPurchaseOrders(data.purchase_orders);
+      })
+      .catch(() => setPurchaseOrders([]));
+  }, []);
+
+  const dashboardStats = useMemo(() => {
+    const rfqValue = rfqs.reduce((sum, rfq) => sum + Number(rfq.value || 0), 0);
+    const poValue = purchaseOrders.reduce((sum, po) => sum + Number(po.total_amount || po.amount || 0), 0);
+    const uniqueSuppliers = new Set([
+      ...suppliers.map((supplier) => supplier.name),
+      ...bids.map((bid) => bid.supplierName || bid.supplier || bid.supplier_name).filter(Boolean),
+      ...purchaseOrders.map((po) => po.supplier_name || po.supplier).filter(Boolean),
+    ]);
+    const openRfqs = rfqs.filter((rfq) => !['draft', 'awarded', 'closed'].includes(statusText(rfq.status))).length;
+    const completedOrders = purchaseOrders.filter((po) => ['delivered', 'fulfilled'].includes(statusText(po.status))).length;
+    const onTime = purchaseOrders.length ? Math.round((completedOrders / purchaseOrders.length) * 100) : 95;
+
+    return [
+      { label: 'Managed Spend', value: moneyCompact(rfqValue + poValue || 24800000), change: `${rfqs.length} RFQs`, trend: 'up' },
+      { label: 'Active Suppliers', value: String(uniqueSuppliers.size || suppliers.length), change: `${bids.length} bids`, trend: 'up' },
+      { label: 'Open RFQs', value: String(openRfqs), change: `${rfqs.length} total`, trend: openRfqs ? 'up' : 'down' },
+      { label: 'On-time Delivery', value: `${onTime}%`, change: `${completedOrders}/${purchaseOrders.length || completedOrders} complete`, trend: 'up' },
+    ];
+  }, [bids, purchaseOrders, rfqs]);
+
+  const dashboardWorkflow = useMemo(() => {
+    const totalRfqs = Math.max(rfqs.length, 1);
+    const evaluating = rfqs.filter((rfq) => statusText(rfq.status).includes('evaluat')).length;
+    const awarded = rfqs.filter((rfq) => ['awarded', 'closed'].includes(statusText(rfq.status))).length;
+    const completedOrders = purchaseOrders.filter((po) => ['delivered', 'fulfilled'].includes(statusText(po.status))).length;
+
+    return [
+      { label: 'RFQ intake', value: Math.min(100, Math.round((rfqs.length / Math.max(seedRfqs.length, 1)) * 100)), color: 'bg-blue-500' },
+      { label: 'Bid evaluation', value: Math.round((evaluating / totalRfqs) * 100) || Math.min(100, bids.length * 12), color: 'bg-violet-500' },
+      { label: 'PO conversion', value: Math.round((awarded / totalRfqs) * 100) || Math.min(100, purchaseOrders.length * 14), color: 'bg-emerald-500' },
+      { label: 'Compliance review', value: purchaseOrders.length ? Math.round((completedOrders / purchaseOrders.length) * 100) : 91, color: 'bg-amber-500' },
+    ];
+  }, [bids.length, purchaseOrders, rfqs]);
+
+  const spendData = useMemo(() => buildSpendData(rfqs, purchaseOrders), [purchaseOrders, rfqs]);
+  const rfqStatusData = useMemo(() => buildRfqStatusData(rfqs), [rfqs]);
+  const orderTrendData = useMemo(() => buildOrderTrendData(purchaseOrders), [purchaseOrders]);
+  const activityFeed = useMemo(() => {
+    const notificationEvents = notifications.slice(0, 5).map((notification) => ({
+      event: notification.title,
+      owner: notification.type,
+      status: notification.category,
+      time: notification.time,
+    }));
+
+    return notificationEvents.length ? notificationEvents : activity;
+  }, [notifications]);
 
   return (
-    <div className="space-y-6">
-      <PageHeader 
-        title="Admin Command Center" 
-        description="Comprehensive operation views spanning procurement sourcing, logistics cargo receiving, and finance audit logging."
-      />
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+      <motion.section
+        variants={item}
+        className="relative overflow-hidden rounded-lg border border-slate-200 bg-gradient-to-br from-slate-100 via-indigo-50 to-blue-50 text-slate-900 shadow-[0_20px_50px_rgba(99,102,241,0.08)] dark:border-slate-800 dark:bg-none dark:bg-slate-950 dark:text-white dark:shadow-[0_24px_80px_rgba(15,23,42,0.18)]"
+      >
+        {/* Light mode dot grid */}
+        <div className="absolute inset-0 bg-[radial-gradient(#c7d2fe_1px,transparent_1px)] [background-size:18px_18px] opacity-60 dark:hidden pointer-events-none" />
+        {/* Dark mode ambient glow */}
+        <div className="absolute inset-0 hidden dark:block bg-[linear-gradient(120deg,rgba(37,99,235,0.28),transparent_38%,rgba(20,184,166,0.2)_72%,transparent)]" />
+        {/* Light mode bottom edge */}
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-indigo-400/50 to-transparent dark:via-cyan-300/70" />
+        <div className="relative grid gap-6 p-6 lg:grid-cols-[1.35fr_0.65fr] lg:p-7">
+          <div>
+            <motion.span
+              animate={{ y: [0, -4, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-100/70 px-3 py-1 text-xs font-bold text-indigo-700 dark:border-white/10 dark:bg-white/10 dark:text-cyan-100"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Live procurement command center
+            </motion.span>
+            <h1 className="mt-4 max-w-3xl text-3xl font-black leading-tight text-slate-900 sm:text-4xl dark:text-white">
+              Full visibility across sourcing, spend, and supplier performance.
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-300">
+              Monitor high-value sourcing events, unblock purchase orders, and keep governance activity visible from a single animated workspace.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                to="/admin/rfqs"
+                className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-indigo-500/20 transition hover:bg-indigo-700 dark:bg-white dark:text-slate-950 dark:shadow-none dark:hover:bg-cyan-50"
+              >
+                Create RFQ <ArrowRight className="h-4 w-4" />
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById('main-scroll');
+                  if (el) el.scrollBy({ top: el.clientHeight * 0.75, behavior: 'smooth' });
+                }}
+                className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white/70 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-white dark:border-white/15 dark:bg-transparent dark:text-white dark:hover:bg-white/10"
+              >
+                View analytics
+              </button>
+            </div>
+          </div>
 
-      {/* KPI Section Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        
-        {/* Sourcing KPIs */}
-        <Card className="p-5 space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
-            <span className="text-xs font-black uppercase text-violet-600 tracking-wider">Sourcing</span>
-            <FileText className="h-4 w-4 text-violet-600" />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            {dashboardWorkflow.map((step, index) => (
+              <motion.div
+                key={step.label}
+                variants={item}
+                whileHover={{ x: 4 }}
+                className="rounded-lg border border-indigo-100 bg-white/60 p-4 backdrop-blur shadow-sm dark:border-white/10 dark:bg-white/10 dark:shadow-none"
+              >
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-bold text-slate-700 dark:text-slate-100">{step.label}</span>
+                  <span className="font-black text-indigo-600 dark:text-cyan-100">{step.value}%</span>
+                </div>
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${step.value}%` }}
+                    transition={{ duration: 0.8, delay: 0.25 + index * 0.08, ease: 'easeOut' }}
+                    className={`h-full rounded-full ${step.color}`}
+                  />
+                </div>
+              </motion.div>
+            ))}
           </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Active RFQs</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">{stats.activeRfqs}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Open Bids</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">{stats.openBids}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Awarded contracts</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">{stats.awardedContracts}</span>
-            </div>
-          </div>
-        </Card>
+        </div>
+      </motion.section>
 
-        {/* Warehouse / Logistics KPIs */}
-        <Card className="p-5 space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
-            <span className="text-xs font-black uppercase text-blue-600 tracking-wider">Warehouse</span>
-            <PackageOpen className="h-4 w-4 text-blue-600" />
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Pending GRNs</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">{stats.pendingGrns}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Receipts Today</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">{stats.receiptsToday}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Quantity Variances</span>
-              <span className="font-bold text-rose-600">{stats.varianceCount} variance</span>
-            </div>
-          </div>
-        </Card>
+      <motion.div variants={container} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {dashboardStats.map((stat, index) => {
+          const Icon = statIcons[index] || BarChart3;
+          return (
+            <motion.div key={stat.label} variants={item} whileHover={{ y: -5, scale: 1.01 }}>
+              <Card className="relative overflow-hidden p-5">
+                <div className="absolute right-0 top-0 h-24 w-24 rounded-bl-full bg-slate-100 dark:bg-slate-800/70" />
+                <div className="relative flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">{stat.label}</p>
+                    <p className="mt-2 text-2xl font-black text-slate-950 dark:text-white">{stat.value}</p>
+                  </div>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white dark:bg-white dark:text-slate-950">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                </div>
+                <p className={`relative mt-4 text-xs font-bold ${stat.trend === 'up' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                  {stat.change} from last cycle
+                </p>
+              </Card>
+            </motion.div>
+          );
+        })}
+      </motion.div>
 
-        {/* Pending Receipts Card */}
-        <Link 
-          to="/admin/receipts-reviews" 
-          state={{ activeTab: 'pending_receipts' }}
-          className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md hover:border-brand-500/50 dark:hover:border-brand-500/50 transition duration-150 flex flex-col justify-between cursor-pointer group"
-        >
-          <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2 w-full">
-            <span className="text-xs font-black uppercase text-amber-600 tracking-wider">Logistics</span>
-            <Clock className="h-4 w-4 text-amber-600" />
-          </div>
-          <div className="space-y-1 mt-2">
-            <p className="text-xs text-slate-500 font-medium">Pending Receipts</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.pendingReceiptsCount}</span>
-              <span className="text-xs text-amber-600 font-semibold bg-amber-50 dark:bg-amber-950/20 px-1.5 py-0.5 rounded">Awaiting GRN</span>
+      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <motion.div variants={item}>
+          <Card>
+            <CardHeader title="Spend Pulse" subtitle="Category spend trend across the current half-year" />
+            <div className="p-4">
+              <SpendChart data={spendData} />
             </div>
-          </div>
-          <div className="flex items-center gap-1 text-[11px] font-bold text-brand-600 hover:text-brand-500 mt-3 border-t border-slate-50 dark:border-slate-800/50 pt-2 w-full">
-            <span>Verify shipments</span>
-            <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
-          </div>
-        </Link>
-
-        {/* Finance KPIs */}
-        <Card className="p-5 space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
-            <span className="text-xs font-black uppercase text-amber-600 tracking-wider">Finance</span>
-            <ReceiptText className="h-4 w-4 text-amber-600" />
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Invoices Review</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">{stats.pendingInvoices}</span>
+          </Card>
+        </motion.div>
+        <motion.div variants={item}>
+          <Card>
+            <CardHeader title="RFQ Flow" subtitle="Live sourcing stages" />
+            <div className="p-4">
+              <RfqPieChart data={rfqStatusData} />
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Payment Processing</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">{stats.processingPayments}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Overdue Payments</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">{stats.overduePayments}</span>
-            </div>
-          </div>
-        </Card>
-
-        {/* Supplier Rankings */}
-        <Card className="p-5 space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
-            <span className="text-xs font-black uppercase text-emerald-600 tracking-wider">Suppliers</span>
-            <Users className="h-4 w-4 text-emerald-600" />
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Average Rating</span>
-              <span className="font-bold text-slate-900 dark:text-slate-100">{stats.avgRating} / 5.0 ⭐</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Top Supplier</span>
-              <span className="font-bold text-emerald-600 truncate max-w-[120px] block text-right">{stats.topSupplier}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">At-Risk Suppliers</span>
-              <span className="font-bold text-rose-600">{stats.riskSuppliers} flagged</span>
-            </div>
-          </div>
-        </Card>
-
+          </Card>
+        </motion.div>
       </div>
 
-      {/* Main Panel grid */}
-      <div className="grid gap-6 md:grid-cols-3">
-        
-        {/* Activity Feed Widget */}
-        <Card className="md:col-span-2">
-          <CardHeader title="Command Activity Log" subtitle="Real-time timeline actions generated by procurement workflows" />
-          <div className="p-5 pt-0 space-y-4">
-            {recentActivities.map((act) => (
-              <div key={act.id} className="flex gap-4 items-start hover:bg-slate-50/50 dark:hover:bg-slate-900/30 p-2 rounded-lg transition">
-                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${getActivityBg(act.type)}`}>
-                  {getActivityIcon(act.type)}
+      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <motion.div variants={item}>
+          <Card>
+            <CardHeader title="Quick Actions" subtitle="Jump into the work that moves procurement forward" />
+            <div className="grid gap-3 p-4 sm:grid-cols-2">
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <motion.div key={action.label} whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }}>
+                    <Link to={action.to} className="group flex items-center gap-3 rounded-lg border border-slate-200 p-4 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/70">
+                      <span className={`flex h-11 w-11 items-center justify-center rounded-lg ${action.tone}`}>
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-black text-slate-950 dark:text-white">{action.label}</span>
+                        <span className="block text-xs text-slate-500 dark:text-slate-400">{action.detail}</span>
+                      </span>
+                      <ArrowRight className="ml-auto h-4 w-4 text-slate-400 transition group-hover:translate-x-1" />
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </Card>
+        </motion.div>
+
+        <motion.div variants={item}>
+          <Card>
+            <CardHeader title="Order Throughput" subtitle="Created versus fulfilled purchase orders" />
+            <div className="p-4">
+              <OrdersChart data={orderTrendData} />
+            </div>
+          </Card>
+        </motion.div>
+      </div>
+
+      <motion.div variants={item}>
+        <Card>
+          <CardHeader title="Recent Activity" subtitle="Latest operational signals" />
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            {activityFeed.map((event) => (
+              <motion.div key={event.event} whileHover={{ backgroundColor: 'rgba(248,250,252,0.8)' }} className="flex items-center gap-3 px-5 py-4 dark:hover:bg-slate-800/50">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
+                  <CheckCircle2 className="h-4 w-4" />
                 </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{act.text}</p>
-                  <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {act.time}
-                  </p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{event.event}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{event.owner} - {event.time}</p>
                 </div>
-              </div>
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{event.status}</span>
+              </motion.div>
             ))}
           </div>
         </Card>
-
-        {/* Quick Sourcing Operations Console & Top Suppliers Card */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader title="Sourcing Operations" subtitle="Quick shortcuts to standard procurement stages" />
-            <div className="p-5 pt-0 space-y-3">
-              <Link to="/admin/rfqs" className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-900/50 dark:hover:bg-slate-900 rounded-xl text-xs font-bold transition group">
-                <span className="text-slate-800 dark:text-slate-200">1. Sourcing RFQ Board</span>
-                <ArrowRight className="h-4 w-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link to="/admin/bids" className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-900/50 dark:hover:bg-slate-900 rounded-xl text-xs font-bold transition group">
-                <span className="text-slate-800 dark:text-slate-200">2. Sourcing Bid Matrix</span>
-                <ArrowRight className="h-4 w-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link to="/admin/orders" className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-900/50 dark:hover:bg-slate-900 rounded-xl text-xs font-bold transition group">
-                <span className="text-slate-800 dark:text-slate-200">3. Purchase Orders</span>
-                <ArrowRight className="h-4 w-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link to="/admin/receipts-reviews" className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-900/50 dark:hover:bg-slate-900 rounded-xl text-xs font-bold transition group">
-                <span className="text-slate-800 dark:text-slate-200">4. Receipts & Reviews</span>
-                <ArrowRight className="h-4 w-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link to="/admin/invoices" className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-900/50 dark:hover:bg-slate-900 rounded-xl text-xs font-bold transition group">
-                <span className="text-slate-800 dark:text-slate-200">5. Invoices & Billing</span>
-                <ArrowRight className="h-4 w-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
-          </Card>
-
-          <Card>
-            <CardHeader title="Top Suppliers" subtitle="Performance Score Rankings" />
-            <div className="p-5 pt-0 space-y-3">
-              {[
-                { name: 'Apex Industrial Components', score: 96, category: 'Mechanical' },
-                { name: 'Vector Packaging Co.', score: 92, category: 'Packaging' },
-                { name: 'Global Components', score: 89, category: 'Electrical' }
-              ].map((supp, index) => (
-                <Link
-                  to="/admin/suppliers"
-                  key={supp.name}
-                  className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-brand-300 dark:border-slate-800 dark:hover:border-brand-500/50 bg-slate-50/50 hover:bg-white dark:bg-slate-900/50 dark:hover:bg-slate-900 transition cursor-pointer group"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-black text-slate-700 dark:text-slate-300">
-                      {index + 1}
-                    </span>
-                    <div>
-                      <p className="text-xs font-bold text-slate-900 dark:text-slate-50">{supp.name}</p>
-                      <p className="text-[10px] text-slate-400 font-medium">{supp.category} Components</p>
-                    </div>
-                  </div>
-                  <span className="inline-flex rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 dark:bg-slate-800 dark:text-brand-400 group-hover:bg-brand-600 group-hover:text-white transition duration-150 shadow-sm">
-                    {supp.score}% Score
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </Card>
-        </div>
-
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
