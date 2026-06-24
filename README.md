@@ -2,6 +2,10 @@
 
 # 🌐 Supplier Relationship Management (SRM) Portal
 
+<a href="https://supplier-relationship-management.vercel.app/" target="_blank" rel="noopener noreferrer">
+  <img src="https://img.shields.io/badge/Live-Demo-success?style=for-the-badge&logo=vercel" alt="Live Demo">
+</a>
+
 **Enterprise-Grade Procurement & Supplier Collaboration Platform**
 
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
