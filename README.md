@@ -30,6 +30,7 @@ A state-of-the-art procurement lifecycle platform connecting **Suppliers** and *
 - [Security & Vulnerability Auditing](#️-security--vulnerability-auditing)
 - [Repository Structure](#-repository-structure)
 - [Setup & Installation](#️-setup--installation)
+- [Production Deployment](#-production-deployment)
 - [Testing & Route Bypass Guides](#-testing--route-bypass-guides)
 - [10-Stage Procurement Flow](#-10-stage-consolidated-sourcing--billing-flow)
 - [Tech Stack](#-tech-stack)
@@ -302,6 +303,31 @@ npm run dev
 ```
 
 Open the URL shown in the terminal (typically **http://localhost:5173**).
+
+---
+
+## 🌐 Production Deployment
+
+The portal is designed to be hosted on a decoupled, free-tier cloud architecture:
+
+### 1. Database: Aiven MySQL (Free Forever)
+* **Hosting Platform:** [Aiven.io](https://aiven.io/) (Free managed MySQL database, 5GB storage, no credit card required).
+* **Setup:** Create a free MySQL database on Aiven. Configure the environment variables on the Render backend to point to the Aiven instance host, password, database, and custom port.
+
+### 2. Backend API: PHP (Render Docker)
+* **Hosting Platform:** [Render Web Services](https://render.com/) (Free Tier Web Service running a custom Docker container).
+* **Settings:**
+  * **Language/Runtime:** `Docker` (compiles and runs using `SRM_PROJECT/backend/Dockerfile` which configures Apache + PHP 8.2 + `mysqli` extension).
+  * **Root Directory:** `SRM_PROJECT/backend`
+* **Environment Variables:** Define `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS`, and `DB_NAME` in the Render dashboard.
+
+### 3. Frontend Client: React (Vercel)
+* **Hosting Platform:** [Vercel](https://vercel.com/) (Free Static Site hosting).
+* **Settings:**
+  * **Root Directory:** `SRM_PROJECT`
+  * **Build Command:** `npm run build`
+  * **Output Directory:** `dist`
+  * **Environment Variable:** `VITE_API_BASE_URL` = `https://your-render-backend-url.onrender.com/api`
 
 ---
 
